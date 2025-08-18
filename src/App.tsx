@@ -15,6 +15,7 @@ export default function App() {
   const [searchState, setSearchState] = useState<SearchState>({ query: '', hits: [], currentIndex: 0 })
   const [error, setError] = useState<string | null>(null)
   const searchInputRef = useRef<HTMLInputElement | null>(null)
+  const [loading, setLoading] = useState(false)
 
   const openFilePicker = () => {
     setError(null)
@@ -67,12 +68,15 @@ export default function App() {
     }
 
     try {
+      setLoading(true)
       const content = await readFileAsText(file)
       const newDoc: Doc = { id: generateId(), name: file.name, size: file.size, content }
       setDocs((prev) => [newDoc, ...prev])
       setActiveId(newDoc.id)
     } catch (err: any) {
       setError(err?.message || '無法解析文字')
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -116,6 +120,7 @@ export default function App() {
         style={{ display: 'none' }}
       />
       {error && <div className="error-banner" role="alert">{error}</div>}
+      {loading && <div className="loading-indicator">Loading…</div>}
     </div>
   )
 }
