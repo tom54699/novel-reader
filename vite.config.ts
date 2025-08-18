@@ -6,5 +6,9 @@ export default defineConfig({
   plugins: [react()],
   // Allow overriding base via env (e.g., GitHub Pages)
   base: process.env.BASE_URL || '/',
+  build: {
+    target: 'es2018',
+    sourcemap: false,
+    outDir: 'dist',
+  },
 })
-
