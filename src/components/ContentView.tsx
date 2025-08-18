@@ -3,18 +3,9 @@ import { useEffect, useMemo, useRef } from 'react'
 export function ContentView(props: any) {
   const { doc = null, onScroll = () => {}, searchState = { query: '', hits: [], currentIndex: 0 } } = props
   const scrollerRef = useRef<HTMLDivElement | null>(null)
-  // Compute parts and offsets unconditionally to keep hooks order stable
-  const content = String(doc?.content ?? '')
-  const parts = useMemo(() => content.split(/\n{2,}/g), [content])
-  const perPartStart = useMemo(() => {
-    const res: number[] = []
-    let acc = 0
-    for (const p of parts) {
-      res.push(acc)
-      acc += p.length + 2
-    }
-    return res
-  }, [parts])
+
+  // Compute entire content as one block to mimic a single ChatGPT message
+  const content = useMemo(() => String(doc?.content ?? ''), [doc?.content])
 
   useEffect(() => {
     const el = scrollerRef.current
@@ -35,13 +26,6 @@ export function ContentView(props: any) {
       current.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' })
     }
   }, [searchState.currentIndex, doc?.id])
-
-  if (!doc)
-    return (
-      <div ref={scrollerRef} className="content-inner">
-        <div className="placeholder">Upload a .txt file to start</div>
-      </div>
-    )
 
   const renderWithHighlights = (text: string, startOffset: number) => {
     const hits = searchState.hits
@@ -68,11 +52,7 @@ export function ContentView(props: any) {
       <pre className="text-content">
         {segments.map((seg, i) =>
           seg.isHit ? (
-            <mark
-              key={i}
-              className={seg.isCurrent ? 'hit hit-current' : 'hit'}
-              data-idx={seg.idx}
-            >
+            <mark key={i} className={seg.isCurrent ? 'hit hit-current' : 'hit'} data-idx={seg.idx}>
               {seg.text}
             </mark>
           ) : (
@@ -82,15 +62,20 @@ export function ContentView(props: any) {
       </pre>
     )
   }
+
   return (
     <div ref={scrollerRef} className="content-inner" onScroll={(e) => onScroll((e.target as HTMLDivElement).scrollTop)}>
-      <div className="bubble-stack">
-        {parts.map((part, idx) => (
-          <article className="bubble" key={idx}>
-            {renderWithHighlights(part, perPartStart[idx])}
+      {doc ? (
+        <div className="bubble-stack">
+          <article className="bubble">
+            <div className="bubble-meta">{doc.name}</div>
+            {renderWithHighlights(content, 0)}
           </article>
-        ))}
-      </div>
+        </div>
+      ) : (
+        <div className="placeholder">Upload a .txt file to start</div>
+      )}
     </div>
   )
 }
+
