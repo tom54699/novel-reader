@@ -67,10 +67,13 @@ export function ContentView(props: any) {
     <div ref={scrollerRef} className="content-inner" onScroll={(e) => onScroll((e.target as HTMLDivElement).scrollTop)}>
       {doc ? (
         <div className="bubble-stack">
-          <article className="bubble">
-            <div className="bubble-meta">{doc.name}</div>
-            {renderWithHighlights(content, 0)}
-          </article>
+          <div className="message-row">
+            <div className="avatar">TXT</div>
+            <article className="bubble">
+              <div className="bubble-meta">{doc.name}</div>
+              {renderWithHighlights(content, 0)}
+            </article>
+          </div>
         </div>
       ) : (
         <div className="placeholder">Upload a .txt file to start</div>
@@ -78,4 +81,3 @@ export function ContentView(props: any) {
     </div>
   )
 }
-
