@@ -72,7 +72,15 @@ export default function App() {
         <BottomBar
           searchState={searchState}
           onSearch={(q: string) => setSearchState((s) => ({ ...s, query: q, currentIndex: 0 }))}
-          onNavigateSearch={() => {}}
+          onNavigateSearch={(direction: 'next' | 'prev') => {
+            setSearchState((s) => {
+              const total = s.hits.length
+              if (!total) return s
+              const delta = direction === 'next' ? 1 : -1
+              const next = (s.currentIndex + delta + total) % total
+              return { ...s, currentIndex: next }
+            })
+          }}
           onAddFile={openFilePicker}
         />
       </div>

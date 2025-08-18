@@ -14,6 +14,16 @@ export function ContentView(props: any) {
     }
   }, [doc?.id])
 
+  // Scroll current hit into view smoothly
+  useEffect(() => {
+    const el = scrollerRef.current
+    if (!el) return
+    const current = el.querySelector(`mark.hit[data-idx="${searchState.currentIndex}"]`) as HTMLElement | null
+    if (current) {
+      current.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' })
+    }
+  }, [searchState.currentIndex, doc?.id])
+
   if (!doc)
     return (
       <div ref={scrollerRef} className="content-inner">
@@ -33,7 +43,7 @@ export function ContentView(props: any) {
     const hits = searchState.hits
     if (!hits.length) return <pre className="text-content">{text}</pre>
 
-    const segments: Array<{ text: string; isHit?: boolean; isCurrent?: boolean }> = []
+    const segments: Array<{ text: string; isHit?: boolean; isCurrent?: boolean; idx?: number }> = []
     let cursor = 0
     const endOffset = startOffset + text.length
     const localHits = hits
@@ -45,7 +55,7 @@ export function ContentView(props: any) {
       const s = Math.max(0, h.start - startOffset)
       const e = Math.min(text.length, h.end - startOffset)
       if (s > cursor) segments.push({ text: text.slice(cursor, s) })
-      segments.push({ text: text.slice(s, e), isHit: true, isCurrent: h.idx === searchState.currentIndex })
+      segments.push({ text: text.slice(s, e), isHit: true, isCurrent: h.idx === searchState.currentIndex, idx: h.idx })
       cursor = e
     }
     if (cursor < text.length) segments.push({ text: text.slice(cursor) })
@@ -54,7 +64,11 @@ export function ContentView(props: any) {
       <pre className="text-content">
         {segments.map((seg, i) =>
           seg.isHit ? (
-            <mark key={i} className={seg.isCurrent ? 'hit hit-current' : 'hit'}>
+            <mark
+              key={i}
+              className={seg.isCurrent ? 'hit hit-current' : 'hit'}
+              data-idx={seg.idx}
+            >
               {seg.text}
             </mark>
           ) : (
