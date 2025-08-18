@@ -20,7 +20,8 @@ export default function App() {
   const [loading, setLoading] = useState(false)
   const [activeChapterIndex, setActiveChapterIndex] = useState<number | null>(null)
   const [displayTraditional, setDisplayTraditional] = useState(false)
-  const [loadedChapterCount, setLoadedChapterCount] = useState(1)
+  const [loadedStartChapterIndex, setLoadedStartChapterIndex] = useState<number | null>(null)
+  const [loadedMessages, setLoadedMessages] = useState<Array<{ key: string; title: string; text: string }>>([])
 
   const openFilePicker = () => {
     setError(null)
@@ -30,30 +31,23 @@ export default function App() {
   // Recompute search hits when query or displayed text changes
   useEffect(() => {
     const activeDoc = docs.find((d) => d.id === activeId)
-    let baseText = ''
+    let displayText = ''
     if (activeDoc) {
-      if (activeChapterIndex != null && activeDoc.chapters && activeDoc.chapters[activeChapterIndex]) {
-        // Concatenate chapters up to loadedChapterCount for infinite scroll
-        const startIdx = activeChapterIndex
-        const endIdx = Math.min(activeDoc.chapters.length - 1, startIdx + loadedChapterCount - 1)
-        let concat = ''
-        for (let i = startIdx; i <= endIdx; i++) {
-          const { start, end } = activeDoc.chapters[i]
-          concat += activeDoc.content.slice(start, end) + '\n\n'
-        }
-        baseText = concat
+      if (activeChapterIndex != null && loadedMessages.length) {
+        // Use already-rendered messages (possibly converted at creation time)
+        displayText = loadedMessages.map((m) => m.text).join('\n\n')
       } else {
-        baseText = activeDoc.content
+        // Whole document view
+        displayText = displayTraditional ? toTraditional(activeDoc.content) : activeDoc.content
       }
     }
-    const displayText = displayTraditional ? toTraditional(baseText) : baseText
     if (!activeDoc || !searchState.query) {
       setSearchState((s) => ({ ...s, hits: [], currentIndex: 0 }))
       return
     }
     const hits = searchInText(displayText, searchState.query)
     setSearchState((s) => ({ ...s, hits, currentIndex: hits.length ? Math.min(s.currentIndex, hits.length - 1) : 0 }))
-  }, [searchState.query, activeId, docs, activeChapterIndex, displayTraditional, loadedChapterCount])
+  }, [searchState.query, activeId, docs, activeChapterIndex, displayTraditional, loadedMessages])
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -97,7 +91,8 @@ export default function App() {
       setDocs((prev) => [newDoc, ...prev])
       setActiveId(newDoc.id)
       setActiveChapterIndex(null)
-      setLoadedChapterCount(1)
+      setLoadedStartChapterIndex(null)
+      setLoadedMessages([])
     } catch (err: any) {
       setError(err?.message || '無法解析文字')
     } finally {
@@ -112,8 +107,30 @@ export default function App() {
           docs={docs}
           activeId={activeId}
           activeChapterIndex={activeChapterIndex}
-          onSelectDoc={(id: string) => { setActiveId(id); setActiveChapterIndex(null); setLoadedChapterCount(1) }}
-          onSelectChapter={(idx: number) => { setActiveChapterIndex(idx); setLoadedChapterCount(1) }}
+          onSelectDoc={(id: string) => {
+            setActiveId(id)
+            setActiveChapterIndex(null)
+            setLoadedStartChapterIndex(null)
+            setLoadedMessages([])
+          }}
+          onSelectChapter={(idx: number) => {
+            setActiveChapterIndex(idx)
+            setLoadedStartChapterIndex(idx)
+            const d = docs.find((x) => x.id === activeId)
+            if (d && d.chapters && d.chapters[idx]) {
+              const ch = d.chapters[idx]
+              const text = d.content.slice(ch.start, ch.end)
+              setLoadedMessages([
+                {
+                  key: `ch-${idx}`,
+                  title: displayTraditional ? toTraditional(ch.title) : ch.title,
+                  text: displayTraditional ? toTraditional(text) : text,
+                },
+              ])
+            } else {
+              setLoadedMessages([])
+            }
+          }}
           traditional={displayTraditional}
         />
       </aside>
@@ -122,32 +139,11 @@ export default function App() {
           doc={(function () {
             const d = docs.find((x) => x.id === activeId) || null
             if (!d) return null
-            const baseText = (() => {
-              if (activeChapterIndex != null && d.chapters && d.chapters[activeChapterIndex]) {
-                const { start, end } = d.chapters[activeChapterIndex]
-                return d.content.slice(start, end)
-              }
-              return d.content
-            })()
-            const displayText = displayTraditional ? toTraditional(baseText) : baseText
             const key = activeChapterIndex != null ? `ch-${activeChapterIndex}` : 'all'
-            return { ...d, content: displayText, scrollTop: d.scroll?.[key] ?? d.scrollTop }
+            return { ...d, scrollTop: d.scroll?.[key] ?? d.scrollTop }
           })()}
           searchState={searchState}
-          messages={(function () {
-            const d = docs.find((x) => x.id === activeId)
-            if (!d) return []
-            if (activeChapterIndex == null || !d.chapters?.length) return []
-            const msgs = [] as Array<{ key: string; title: string; text: string }>
-            const startIdx = activeChapterIndex
-            const endIdx = Math.min(d.chapters.length - 1, startIdx + loadedChapterCount - 1)
-            for (let i = startIdx; i <= endIdx; i++) {
-              const ch = d.chapters[i]
-              const text = d.content.slice(ch.start, ch.end)
-              msgs.push({ key: `ch-${i}`, title: displayTraditional ? toTraditional(ch.title) : ch.title, text: displayTraditional ? toTraditional(text) : text })
-            }
-            return msgs
-          })()}
+          messages={activeChapterIndex != null ? loadedMessages : []}
           onScroll={(scrollTop: number) => {
             if (!activeId) return
             setDocs((prev) => prev.map((d) => {
@@ -158,11 +154,19 @@ export default function App() {
           }}
           onEndReached={() => {
             const d = docs.find((x) => x.id === activeId)
-            if (!d || activeChapterIndex == null || !d.chapters?.length) return
-            const endIdx = Math.min(d.chapters.length - 1, activeChapterIndex + loadedChapterCount - 1)
-            if (endIdx < d.chapters.length - 1) {
-              setLoadedChapterCount((c) => c + 1)
-            }
+            if (!d || loadedStartChapterIndex == null || !d.chapters?.length) return
+            const nextIdx = loadedStartChapterIndex + loadedMessages.length
+            if (nextIdx >= d.chapters.length) return
+            const ch = d.chapters[nextIdx]
+            const text = d.content.slice(ch.start, ch.end)
+            setLoadedMessages((arr) => [
+              ...arr,
+              {
+                key: `ch-${nextIdx}`,
+                title: displayTraditional ? toTraditional(ch.title) : ch.title,
+                text: displayTraditional ? toTraditional(text) : text,
+              },
+            ])
           }}
         />
       </main>
