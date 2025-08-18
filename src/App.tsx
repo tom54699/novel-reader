@@ -5,6 +5,8 @@ import { BottomBar } from './components/BottomBar'
 import type { AppState, Doc, SearchState } from './types'
 import { validateFile, readFileAsText } from './utils/file'
 import { generateId } from './utils/id'
+import { searchInText } from './utils/search'
+import { useEffect } from 'react'
 
 export default function App() {
   const fileInputRef = useRef<HTMLInputElement | null>(null)
@@ -17,6 +19,17 @@ export default function App() {
     setError(null)
     fileInputRef.current?.click()
   }
+
+  // Recompute search hits when query, active doc, or docs change
+  useEffect(() => {
+    const activeDoc = docs.find((d) => d.id === activeId)
+    if (!activeDoc || !searchState.query) {
+      setSearchState((s) => ({ ...s, hits: [], currentIndex: 0 }))
+      return
+    }
+    const hits = searchInText(activeDoc.content, searchState.query)
+    setSearchState((s) => ({ ...s, hits, currentIndex: hits.length ? Math.min(s.currentIndex, hits.length - 1) : 0 }))
+  }, [searchState.query, activeId, docs])
 
   const onFileSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -58,7 +71,7 @@ export default function App() {
       <div className="bottombar">
         <BottomBar
           searchState={searchState}
-          onSearch={(q: string) => setSearchState((s: any) => ({ ...s, query: q }))}
+          onSearch={(q: string) => setSearchState((s) => ({ ...s, query: q, currentIndex: 0 }))}
           onNavigateSearch={() => {}}
           onAddFile={openFilePicker}
         />

@@ -1,5 +1,5 @@
 export function BottomBar(props: any) {
-  const { searchState = { query: '' }, onSearch = () => {}, onNavigateSearch = () => {}, onAddFile = () => {} } = props
+  const { searchState = { query: '', hits: [], currentIndex: 0 }, onSearch = () => {}, onNavigateSearch = () => {}, onAddFile = () => {} } = props
   return (
     <div className="bottombar-inner">
       <button className="add-btn" aria-label="Add file" title="Add file" onClick={onAddFile}>
@@ -18,6 +18,9 @@ export function BottomBar(props: any) {
         <button className="nav-btn" onClick={() => onNavigateSearch('next')} aria-label="Next hit">
           ↓
         </button>
+        <div className="search-count" aria-live="polite">
+          {searchState.hits.length ? `${Math.min(searchState.currentIndex + 1, searchState.hits.length)}/${searchState.hits.length}` : '0/0'}
+        </div>
       </div>
     </div>
   )
