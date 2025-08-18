@@ -7,6 +7,8 @@ import { validateFile, readFileAsText } from './utils/file'
 import { generateId } from './utils/id'
 import { searchInText } from './utils/search'
 import { useEffect } from 'react'
+import { parseChapters } from './utils/chapters'
+import { toTraditional } from './utils/traditional'
 
 export default function App() {
   const fileInputRef = useRef<HTMLInputElement | null>(null)
@@ -16,22 +18,33 @@ export default function App() {
   const [error, setError] = useState<string | null>(null)
   const searchInputRef = useRef<HTMLInputElement | null>(null)
   const [loading, setLoading] = useState(false)
+  const [activeChapterIndex, setActiveChapterIndex] = useState<number | null>(null)
+  const [displayTraditional, setDisplayTraditional] = useState(false)
 
   const openFilePicker = () => {
     setError(null)
     fileInputRef.current?.click()
   }
 
-  // Recompute search hits when query, active doc, or docs change
+  // Recompute search hits when query or displayed text changes
   useEffect(() => {
     const activeDoc = docs.find((d) => d.id === activeId)
+    const baseText = (() => {
+      if (!activeDoc) return ''
+      if (activeChapterIndex != null && activeDoc.chapters && activeDoc.chapters[activeChapterIndex]) {
+        const { start, end } = activeDoc.chapters[activeChapterIndex]
+        return activeDoc.content.slice(start, end)
+      }
+      return activeDoc.content
+    })()
+    const displayText = displayTraditional ? toTraditional(baseText) : baseText
     if (!activeDoc || !searchState.query) {
       setSearchState((s) => ({ ...s, hits: [], currentIndex: 0 }))
       return
     }
-    const hits = searchInText(activeDoc.content, searchState.query)
+    const hits = searchInText(displayText, searchState.query)
     setSearchState((s) => ({ ...s, hits, currentIndex: hits.length ? Math.min(s.currentIndex, hits.length - 1) : 0 }))
-  }, [searchState.query, activeId, docs])
+  }, [searchState.query, activeId, docs, activeChapterIndex, displayTraditional])
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -70,9 +83,11 @@ export default function App() {
     try {
       setLoading(true)
       const content = await readFileAsText(file)
-      const newDoc: Doc = { id: generateId(), name: file.name, size: file.size, content }
+      const chapters = parseChapters(content)
+      const newDoc: Doc = { id: generateId(), name: file.name, size: file.size, content, chapters }
       setDocs((prev) => [newDoc, ...prev])
       setActiveId(newDoc.id)
+      setActiveChapterIndex(null)
     } catch (err: any) {
       setError(err?.message || '無法解析文字')
     } finally {
@@ -83,15 +98,38 @@ export default function App() {
   return (
     <div className="app-root">
       <aside className="sidebar">
-        <Sidebar docs={docs} activeId={activeId} onSelectDoc={setActiveId} />
+        <Sidebar
+          docs={docs}
+          activeId={activeId}
+          activeChapterIndex={activeChapterIndex}
+          onSelectDoc={(id: string) => { setActiveId(id); setActiveChapterIndex(null) }}
+          onSelectChapter={(idx: number) => setActiveChapterIndex(idx)}
+        />
       </aside>
       <main className="content">
         <ContentView
-          doc={docs.find((d) => d.id === activeId) || null}
+          doc={(function () {
+            const d = docs.find((x) => x.id === activeId) || null
+            if (!d) return null
+            const baseText = (() => {
+              if (activeChapterIndex != null && d.chapters && d.chapters[activeChapterIndex]) {
+                const { start, end } = d.chapters[activeChapterIndex]
+                return d.content.slice(start, end)
+              }
+              return d.content
+            })()
+            const displayText = displayTraditional ? toTraditional(baseText) : baseText
+            const key = activeChapterIndex != null ? `ch-${activeChapterIndex}` : 'all'
+            return { ...d, content: displayText, scrollTop: d.scroll?.[key] ?? d.scrollTop }
+          })()}
           searchState={searchState}
           onScroll={(scrollTop: number) => {
             if (!activeId) return
-            setDocs((prev) => prev.map((d) => (d.id === activeId ? { ...d, scrollTop } : d)))
+            setDocs((prev) => prev.map((d) => {
+              if (d.id !== activeId) return d
+              const key = activeChapterIndex != null ? `ch-${activeChapterIndex}` : 'all'
+              return { ...d, scroll: { ...(d.scroll || {}), [key]: scrollTop } }
+            }))
           }}
         />
       </main>
@@ -110,6 +148,8 @@ export default function App() {
           }}
           onAddFile={openFilePicker}
           inputRef={searchInputRef}
+          onToggleTraditional={() => setDisplayTraditional((v) => !v)}
+          traditional={displayTraditional}
         />
       </div>
       <input

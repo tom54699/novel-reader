@@ -4,6 +4,10 @@ export interface Doc {
   size: number
   content: string
   scrollTop?: number
+  // Optional per-section scroll tracking
+  scroll?: Record<string, number>
+  // Optional parsed chapters
+  chapters?: { title: string; start: number; end: number }[]
 }
 
 export interface SearchHit {
@@ -22,4 +26,3 @@ export interface AppState {
   activeId: string | null
   searchState: SearchState
 }
-

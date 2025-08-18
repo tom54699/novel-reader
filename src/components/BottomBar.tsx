@@ -1,5 +1,5 @@
 export function BottomBar(props: any) {
-  const { searchState = { query: '', hits: [], currentIndex: 0 }, onSearch = () => {}, onNavigateSearch = () => {}, onAddFile = () => {}, inputRef } = props
+  const { searchState = { query: '', hits: [], currentIndex: 0 }, onSearch = () => {}, onNavigateSearch = () => {}, onAddFile = () => {}, inputRef, onToggleTraditional = () => {}, traditional = false } = props
   return (
     <div className="bottombar-inner">
       <div className="bar-surface">
@@ -14,6 +14,9 @@ export function BottomBar(props: any) {
           onChange={(e) => onSearch(e.target.value)}
         />
         <div className="search-actions">
+          <button className={traditional ? 'nav-btn active' : 'nav-btn'} onClick={onToggleTraditional} aria-label="Toggle Traditional Chinese" title="切換繁體">
+            繁
+          </button>
           <button className="nav-btn" onClick={() => onNavigateSearch('prev')} aria-label="Previous hit">
             ↑
           </button>
