@@ -46,7 +46,14 @@ export default function App() {
         <Sidebar docs={docs} activeId={activeId} onSelectDoc={setActiveId} />
       </aside>
       <main className="content">
-        <ContentView doc={docs.find((d) => d.id === activeId) || null} searchState={searchState} onScroll={() => {}} />
+        <ContentView
+          doc={docs.find((d) => d.id === activeId) || null}
+          searchState={searchState}
+          onScroll={(scrollTop: number) => {
+            if (!activeId) return
+            setDocs((prev) => prev.map((d) => (d.id === activeId ? { ...d, scrollTop } : d)))
+          }}
+        />
       </main>
       <div className="bottombar">
         <BottomBar
