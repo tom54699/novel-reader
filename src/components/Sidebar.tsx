@@ -15,26 +15,29 @@ export function Sidebar(props: any) {
       <ul className="file-list">
         {docs.map((doc: any) => (
           <li key={doc.id}>
-            <div
+            <button
+              type="button"
               className={doc.id === activeId ? 'file-item active' : 'file-item'}
               onClick={() => onSelectDoc(doc.id)}
-              title={doc.name}
+              title={traditional ? toTraditional(doc.name) : doc.name}
             >
-              <span className="file-name">{truncateMiddle(doc.name, 40)}</span>
-            </div>
+              <span className="file-name">{truncateMiddle(traditional ? toTraditional(doc.name) : doc.name, 40)}</span>
+            </button>
             {activeDoc && doc.id === activeDoc.id && Array.isArray(activeDoc.chapters) && activeDoc.chapters.length > 0 && (
               <ul className="chapter-list">
                 {activeDoc.chapters.map((ch: any, idx: number) => (
-                  <li
-                    key={idx}
-                    className={activeChapterIndex === idx ? 'chapter-item active' : 'chapter-item'}
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      onSelectChapter(idx)
-                    }}
-                    title={ch.title}
-                  >
-                    <span className="chapter-name">{truncateMiddle(traditional ? toTraditional(ch.title) : ch.title, 36)}</span>
+                  <li key={idx}>
+                    <button
+                      type="button"
+                      className={activeChapterIndex === idx ? 'chapter-item active' : 'chapter-item'}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        onSelectChapter(idx)
+                      }}
+                      title={traditional ? toTraditional(ch.title) : ch.title}
+                    >
+                      <span className="chapter-name">{truncateMiddle(traditional ? toTraditional(ch.title) : ch.title, 36)}</span>
+                    </button>
                   </li>
                 ))}
               </ul>

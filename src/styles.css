@@ -29,12 +29,13 @@ body {
 
 .sidebar { grid-area: sidebar; background: var(--sidebar-bg); border-right: 1px solid #0b1220; color: #e5e7eb; }
 .content { grid-area: content; overflow: hidden; display: flex; flex-direction: column; }
-.bottombar { grid-area: bottombar; border-top: 1px solid #2f313a; background: transparent; }
+.bottombar { grid-area: bottombar; border-top: 1px solid #2f313a; background: transparent; z-index: 3; }
+.content { z-index: 1; }
 
 .sidebar-inner { height: 100%; display: flex; flex-direction: column; }
 .sidebar-header { padding: 12px; font-weight: 600; color: #cbd5e1; }
 .file-list { list-style: none; margin: 0; padding: 0; overflow-y: auto; }
-.file-item { padding: 10px 12px; cursor: pointer; border-radius: 6px; margin: 2px 6px; color: #e5e7eb; }
+.file-item { padding: 10px 12px; cursor: pointer; border-radius: 6px; margin: 2px 6px; color: #e5e7eb; width: 100%; text-align: left; background: transparent; border: none; }
 .file-item:hover { background: var(--hover); }
 .file-item.active { background: var(--active); }
 .file-name { display: inline-block; max-width: calc(var(--sidebar-width) - 32px); overflow: hidden; text-overflow: ellipsis; color: #e5e7eb; }
@@ -43,7 +44,7 @@ body {
 .bubble-stack { width: 100%; max-width: var(--content-max); padding: 24px; }
 .bubble { background: #444654; border: 1px solid #3f414b; border-radius: 16px; padding: 16px 18px; margin: 8px 0 16px; box-shadow: 0 1px 2px rgba(0,0,0,0.06); }
 .chapter-list { list-style: none; margin: 0; padding: 0 0 6px 12px; }
-.chapter-item { padding: 6px 8px; cursor: pointer; border-radius: 6px; color: #d1d5db; }
+.chapter-item { padding: 6px 8px; cursor: pointer; border-radius: 6px; color: #d1d5db; width: 100%; text-align: left; background: transparent; border: none; }
 .chapter-item:hover { background: #111827; }
 .chapter-item.active { background: #1f2937; }
 .message-row { display: flex; align-items: flex-start; gap: 12px; }

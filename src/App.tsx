@@ -30,14 +30,22 @@ export default function App() {
   // Recompute search hits when query or displayed text changes
   useEffect(() => {
     const activeDoc = docs.find((d) => d.id === activeId)
-    const baseText = (() => {
-      if (!activeDoc) return ''
+    let baseText = ''
+    if (activeDoc) {
       if (activeChapterIndex != null && activeDoc.chapters && activeDoc.chapters[activeChapterIndex]) {
-        const { start, end } = activeDoc.chapters[activeChapterIndex]
-        return activeDoc.content.slice(start, end)
+        // Concatenate chapters up to loadedChapterCount for infinite scroll
+        const startIdx = activeChapterIndex
+        const endIdx = Math.min(activeDoc.chapters.length - 1, startIdx + loadedChapterCount - 1)
+        let concat = ''
+        for (let i = startIdx; i <= endIdx; i++) {
+          const { start, end } = activeDoc.chapters[i]
+          concat += activeDoc.content.slice(start, end) + '\n\n'
+        }
+        baseText = concat
+      } else {
+        baseText = activeDoc.content
       }
-      return activeDoc.content
-    })()
+    }
     const displayText = displayTraditional ? toTraditional(baseText) : baseText
     if (!activeDoc || !searchState.query) {
       setSearchState((s) => ({ ...s, hits: [], currentIndex: 0 }))
@@ -45,7 +53,7 @@ export default function App() {
     }
     const hits = searchInText(displayText, searchState.query)
     setSearchState((s) => ({ ...s, hits, currentIndex: hits.length ? Math.min(s.currentIndex, hits.length - 1) : 0 }))
-  }, [searchState.query, activeId, docs, activeChapterIndex, displayTraditional])
+  }, [searchState.query, activeId, docs, activeChapterIndex, displayTraditional, loadedChapterCount])
 
   // Keyboard shortcuts
   useEffect(() => {
