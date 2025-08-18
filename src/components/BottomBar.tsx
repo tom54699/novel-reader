@@ -1,11 +1,40 @@
+import { useState } from 'react'
+
 export function BottomBar(props: any) {
   const { searchState = { query: '', hits: [], currentIndex: 0 }, onSearch = () => {}, onNavigateSearch = () => {}, onAddFile = () => {}, inputRef, onToggleTraditional = () => {}, traditional = false } = props
+  const [menuOpen, setMenuOpen] = useState(false)
   return (
     <div className="bottombar-inner">
       <div className="bar-surface">
-        <button className="add-btn" aria-label="Add file" title="Add file" onClick={onAddFile}>
-          +
-        </button>
+        <div className="tool-wrap">
+          <button className="add-btn" aria-label="Open tools" title="工具" onClick={() => setMenuOpen((v) => !v)}>
+            +
+          </button>
+          {menuOpen && (
+            <div className="tool-menu" role="menu">
+              <button
+                type="button"
+                className="menu-item"
+                onClick={() => {
+                  setMenuOpen(false)
+                  onAddFile()
+                }}
+              >
+                上傳 .txt 檔案
+              </button>
+              <button
+                type="button"
+                className={traditional ? 'menu-item checked' : 'menu-item'}
+                onClick={() => {
+                  onToggleTraditional()
+                  setMenuOpen(false)
+                }}
+              >
+                {traditional ? '✓ ' : ''}繁體顯示
+              </button>
+            </div>
+          )}
+        </div>
         <input
           ref={inputRef}
           className="search-input"
@@ -14,9 +43,6 @@ export function BottomBar(props: any) {
           onChange={(e) => onSearch(e.target.value)}
         />
         <div className="search-actions">
-          <button className={traditional ? 'nav-btn active' : 'nav-btn'} onClick={onToggleTraditional} aria-label="Toggle Traditional Chinese" title="切換繁體">
-            繁
-          </button>
           <button className="nav-btn" onClick={() => onNavigateSearch('prev')} aria-label="Previous hit">
             ↑
           </button>
