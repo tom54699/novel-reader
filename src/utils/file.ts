@@ -1,4 +1,4 @@
-const MAX_SIZE = 5 * 1024 * 1024 // 5MB
+const MAX_SIZE = 20 * 1024 * 1024 // 20MB
 
 export function validateFile(file: File): { valid: boolean; error?: string } {
   const name = file.name || ''
@@ -20,4 +20,3 @@ export function readFileAsText(file: File): Promise<string> {
     }
   })
 }
-

@@ -6,7 +6,7 @@ function makeFile(name: string, size: number, type = 'text/plain') {
 }
 
 describe('validateFile', () => {
-  it('accepts valid .txt under 5MB', () => {
+  it('accepts valid .txt under 20MB', () => {
     const f = makeFile('hello.txt', 10)
     expect(validateFile(f)).toEqual({ valid: true })
   })
@@ -16,9 +16,8 @@ describe('validateFile', () => {
     expect(validateFile(f)).toEqual({ valid: false, error: '僅支援 .txt' })
   })
 
-  it('rejects files over 5MB', () => {
-    const f = makeFile('big.txt', 5 * 1024 * 1024 + 1)
+  it('rejects files over 20MB', () => {
+    const f = makeFile('big.txt', 20 * 1024 * 1024 + 1)
     expect(validateFile(f)).toEqual({ valid: false, error: '檔案過大' })
   })
 })
-
