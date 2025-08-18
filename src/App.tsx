@@ -1,13 +1,44 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { Sidebar } from './components/Sidebar'
 import { ContentView } from './components/ContentView'
 import { BottomBar } from './components/BottomBar'
+import type { AppState, Doc, SearchState } from './types'
+import { validateFile, readFileAsText } from './utils/file'
+import { generateId } from './utils/id'
 
 export default function App() {
-  // Placeholder state; real types and logic in later tasks
-  const [activeId, setActiveId] = useState<string | null>(null)
-  const [docs, setDocs] = useState<any[]>([])
-  const [searchState, setSearchState] = useState<any>({ query: '', hits: [], currentIndex: 0 })
+  const fileInputRef = useRef<HTMLInputElement | null>(null)
+  const [activeId, setActiveId] = useState<AppState['activeId']>(null)
+  const [docs, setDocs] = useState<AppState['docs']>([])
+  const [searchState, setSearchState] = useState<SearchState>({ query: '', hits: [], currentIndex: 0 })
+  const [error, setError] = useState<string | null>(null)
+
+  const openFilePicker = () => {
+    setError(null)
+    fileInputRef.current?.click()
+  }
+
+  const onFileSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    // Reset value to allow re-selecting same file later
+    e.target.value = ''
+    if (!file) return
+
+    const validation = validateFile(file)
+    if (!validation.valid) {
+      setError(validation.error || '無法上傳檔案')
+      return
+    }
+
+    try {
+      const content = await readFileAsText(file)
+      const newDoc: Doc = { id: generateId(), name: file.name, size: file.size, content }
+      setDocs((prev) => [newDoc, ...prev])
+      setActiveId(newDoc.id)
+    } catch (err: any) {
+      setError(err?.message || '無法解析文字')
+    }
+  }
 
   return (
     <div className="app-root">
@@ -22,10 +53,17 @@ export default function App() {
           searchState={searchState}
           onSearch={(q: string) => setSearchState((s: any) => ({ ...s, query: q }))}
           onNavigateSearch={() => {}}
-          onAddFile={() => {}}
+          onAddFile={openFilePicker}
         />
       </div>
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".txt"
+        onChange={onFileSelected}
+        style={{ display: 'none' }}
+      />
+      {error && <div className="error-banner" role="alert">{error}</div>}
     </div>
   )
 }
-

@@ -48,7 +48,8 @@ body {
 .add-btn:hover, .nav-btn:hover { opacity: 0.8; }
 .search-input { flex: 1; height: 32px; border: 1px solid #ddd; border-radius: 6px; padding: 0 8px; font-size: 14px; }
 
+.error-banner { position: fixed; left: var(--sidebar-width); right: 0; bottom: 60px; background: #ffefef; color: #b00020; border-top: 1px solid #f5c2c7; border-left: 1px solid #f5c2c7; padding: 10px 12px; }
+
 @media (max-width: 1024px) {
   body { min-width: 1024px; }
 }
-
