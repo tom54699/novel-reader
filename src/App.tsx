@@ -140,7 +140,11 @@ export default function App() {
             const d = docs.find((x) => x.id === activeId) || null
             if (!d) return null
             const key = activeChapterIndex != null ? `ch-${activeChapterIndex}` : 'all'
-            return { ...d, scrollTop: d.scroll?.[key] ?? d.scrollTop }
+            // In non-chapter mode, convert whole content according to toggle
+            const content = activeChapterIndex == null
+              ? (displayTraditional ? toTraditional(d.content) : d.content)
+              : d.content
+            return { ...d, content, scrollTop: d.scroll?.[key] ?? d.scrollTop }
           })()}
           searchState={searchState}
           messages={activeChapterIndex != null ? loadedMessages : []}

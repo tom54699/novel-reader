@@ -76,7 +76,7 @@ export function ContentView(props: any) {
       onScroll={(e) => {
         const el = e.target as HTMLDivElement
         onScroll(el.scrollTop)
-        if (el.scrollHeight - el.scrollTop - el.clientHeight < 120) {
+        if (el.scrollHeight - el.scrollTop - el.clientHeight < 240) {
           onEndReached()
         }
       }}
@@ -94,7 +94,7 @@ export function ContentView(props: any) {
               return messages.map((m: any, idx: number) => (
                 <div className="message-row" key={m.key ?? idx}>
                   <div className="avatar">TXT</div>
-                  <article className="bubble">
+                  <article className={idx % 2 === 0 ? 'bubble assistant' : 'bubble user'}>
                     {m.title ? <div className="bubble-meta">{m.title}</div> : null}
                     {renderWithHighlights(String(m.text ?? ''), offsets[idx])}
                   </article>
@@ -104,7 +104,7 @@ export function ContentView(props: any) {
           ) : (
             <div className="message-row">
               <div className="avatar">TXT</div>
-              <article className="bubble">
+              <article className="bubble assistant">
                 <div className="bubble-meta">{doc.name}</div>
                 {renderWithHighlights(content, 0)}
               </article>
