@@ -1,15 +1,22 @@
 export function ContentView(props: any) {
   const { doc = null } = props
+  if (!doc)
+    return (
+      <div className="content-inner">
+        <div className="placeholder">Upload a .txt file to start</div>
+      </div>
+    )
+
+  const parts = String(doc.content).split(/\n{2,}/g)
   return (
     <div className="content-inner">
-      {!doc ? (
-        <div className="placeholder">Upload a .txt file to start</div>
-      ) : (
-        <article className="bubble">
-          <pre className="text-content">{doc.content}</pre>
-        </article>
-      )}
+      <div className="bubble-stack">
+        {parts.map((part, idx) => (
+          <article className="bubble" key={idx}>
+            <pre className="text-content">{part}</pre>
+          </article>
+        ))}
+      </div>
     </div>
   )
 }
-

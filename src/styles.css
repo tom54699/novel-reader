@@ -39,7 +39,8 @@ body {
 .file-name { display: inline-block; max-width: calc(var(--sidebar-width) - 32px); overflow: hidden; text-overflow: ellipsis; }
 
 .content-inner { flex: 1; overflow-y: auto; display: flex; justify-content: center; }
-.bubble { width: 100%; max-width: var(--content-max); margin: 24px; }
+.bubble-stack { width: 100%; max-width: var(--content-max); margin: 24px; }
+.bubble { background: #f7fbff; border: 1px solid #e6f0fa; border-radius: 12px; padding: 16px; margin: 12px 0; }
 .text-content { font-family: 'Courier New', Consolas, monospace; font-size: 16px; line-height: 1.7; white-space: pre-wrap; word-break: break-word; }
 .placeholder { color: #888; margin: 24px; }
 
