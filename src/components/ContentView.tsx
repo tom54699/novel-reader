@@ -3,6 +3,18 @@ import { useEffect, useMemo, useRef } from 'react'
 export function ContentView(props: any) {
   const { doc = null, onScroll = () => {}, searchState = { query: '', hits: [], currentIndex: 0 } } = props
   const scrollerRef = useRef<HTMLDivElement | null>(null)
+  // Compute parts and offsets unconditionally to keep hooks order stable
+  const content = String(doc?.content ?? '')
+  const parts = useMemo(() => content.split(/\n{2,}/g), [content])
+  const perPartStart = useMemo(() => {
+    const res: number[] = []
+    let acc = 0
+    for (const p of parts) {
+      res.push(acc)
+      acc += p.length + 2
+    }
+    return res
+  }, [parts])
 
   useEffect(() => {
     const el = scrollerRef.current
@@ -30,17 +42,6 @@ export function ContentView(props: any) {
         <div className="placeholder">Upload a .txt file to start</div>
       </div>
     )
-
-  const parts = useMemo(() => String(doc.content).split(/\n{2,}/g), [doc.content])
-  const perPartStart = useMemo(() => {
-    const res: number[] = []
-    let acc = 0
-    for (const p of parts) {
-      res.push(acc)
-      acc += p.length + 2
-    }
-    return res
-  }, [parts])
 
   const renderWithHighlights = (text: string, startOffset: number) => {
     const hits = searchState.hits
