@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 
 export function ContentView(props: any) {
   const { doc = null, onScroll = () => {}, searchState = { query: '', hits: [], currentIndex: 0 } } = props
@@ -31,13 +31,16 @@ export function ContentView(props: any) {
       </div>
     )
 
-  const parts = String(doc.content).split(/\n{2,}/g)
-  const perPartStart: number[] = []
-  let acc = 0
-  for (const p of parts) {
-    perPartStart.push(acc)
-    acc += p.length + 2 // approximate adding two newlines removed by split
-  }
+  const parts = useMemo(() => String(doc.content).split(/\n{2,}/g), [doc.content])
+  const perPartStart = useMemo(() => {
+    const res: number[] = []
+    let acc = 0
+    for (const p of parts) {
+      res.push(acc)
+      acc += p.length + 2
+    }
+    return res
+  }, [parts])
 
   const renderWithHighlights = (text: string, startOffset: number) => {
     const hits = searchState.hits
