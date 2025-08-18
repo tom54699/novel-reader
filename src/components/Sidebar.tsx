@@ -4,8 +4,10 @@ function truncateMiddle(str: string, max = 30) {
   return str.slice(0, half) + '…' + str.slice(-half)
 }
 
+import { toTraditional } from '../utils/traditional'
+
 export function Sidebar(props: any) {
-  const { docs = [], activeId = null, activeChapterIndex = null, onSelectDoc = () => {}, onSelectChapter = () => {} } = props
+  const { docs = [], activeId = null, activeChapterIndex = null, onSelectDoc = () => {}, onSelectChapter = () => {}, traditional = false } = props
   const activeDoc = docs.find((d: any) => d.id === activeId)
   return (
     <div className="sidebar-inner">
@@ -32,7 +34,7 @@ export function Sidebar(props: any) {
                     }}
                     title={ch.title}
                   >
-                    <span className="chapter-name">{truncateMiddle(ch.title, 36)}</span>
+                    <span className="chapter-name">{truncateMiddle(traditional ? toTraditional(ch.title) : ch.title, 36)}</span>
                   </li>
                 ))}
               </ul>

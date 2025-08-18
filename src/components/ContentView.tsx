@@ -1,7 +1,13 @@
 import { useEffect, useMemo, useRef } from 'react'
 
 export function ContentView(props: any) {
-  const { doc = null, onScroll = () => {}, searchState = { query: '', hits: [], currentIndex: 0 } } = props
+  const {
+    doc = null,
+    onScroll = () => {},
+    onEndReached = () => {},
+    searchState = { query: '', hits: [], currentIndex: 0 },
+    messages,
+  } = props
   const scrollerRef = useRef<HTMLDivElement | null>(null)
 
   // Compute entire content as one block to mimic a single ChatGPT message
@@ -64,16 +70,46 @@ export function ContentView(props: any) {
   }
 
   return (
-    <div ref={scrollerRef} className="content-inner" onScroll={(e) => onScroll((e.target as HTMLDivElement).scrollTop)}>
+    <div
+      ref={scrollerRef}
+      className="content-inner"
+      onScroll={(e) => {
+        const el = e.target as HTMLDivElement
+        onScroll(el.scrollTop)
+        if (el.scrollHeight - el.scrollTop - el.clientHeight < 120) {
+          onEndReached()
+        }
+      }}
+    >
       {doc ? (
         <div className="bubble-stack">
-          <div className="message-row">
-            <div className="avatar">TXT</div>
-            <article className="bubble">
-              <div className="bubble-meta">{doc.name}</div>
-              {renderWithHighlights(content, 0)}
-            </article>
-          </div>
+          {Array.isArray(messages) && messages.length > 0 ? (
+            (() => {
+              const offsets: number[] = []
+              let acc = 0
+              for (const m of messages) {
+                offsets.push(acc)
+                acc += (m.text?.length ?? 0) + 2
+              }
+              return messages.map((m: any, idx: number) => (
+                <div className="message-row" key={m.key ?? idx}>
+                  <div className="avatar">TXT</div>
+                  <article className="bubble">
+                    {m.title ? <div className="bubble-meta">{m.title}</div> : null}
+                    {renderWithHighlights(String(m.text ?? ''), offsets[idx])}
+                  </article>
+                </div>
+              ))
+            })()
+          ) : (
+            <div className="message-row">
+              <div className="avatar">TXT</div>
+              <article className="bubble">
+                <div className="bubble-meta">{doc.name}</div>
+                {renderWithHighlights(content, 0)}
+              </article>
+            </div>
+          )}
         </div>
       ) : (
         <div className="placeholder">Upload a .txt file to start</div>

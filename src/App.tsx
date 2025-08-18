@@ -20,6 +20,7 @@ export default function App() {
   const [loading, setLoading] = useState(false)
   const [activeChapterIndex, setActiveChapterIndex] = useState<number | null>(null)
   const [displayTraditional, setDisplayTraditional] = useState(false)
+  const [loadedChapterCount, setLoadedChapterCount] = useState(1)
 
   const openFilePicker = () => {
     setError(null)
@@ -88,6 +89,7 @@ export default function App() {
       setDocs((prev) => [newDoc, ...prev])
       setActiveId(newDoc.id)
       setActiveChapterIndex(null)
+      setLoadedChapterCount(1)
     } catch (err: any) {
       setError(err?.message || '無法解析文字')
     } finally {
@@ -102,8 +104,9 @@ export default function App() {
           docs={docs}
           activeId={activeId}
           activeChapterIndex={activeChapterIndex}
-          onSelectDoc={(id: string) => { setActiveId(id); setActiveChapterIndex(null) }}
-          onSelectChapter={(idx: number) => setActiveChapterIndex(idx)}
+          onSelectDoc={(id: string) => { setActiveId(id); setActiveChapterIndex(null); setLoadedChapterCount(1) }}
+          onSelectChapter={(idx: number) => { setActiveChapterIndex(idx); setLoadedChapterCount(1) }}
+          traditional={displayTraditional}
         />
       </aside>
       <main className="content">
@@ -123,6 +126,20 @@ export default function App() {
             return { ...d, content: displayText, scrollTop: d.scroll?.[key] ?? d.scrollTop }
           })()}
           searchState={searchState}
+          messages={(function () {
+            const d = docs.find((x) => x.id === activeId)
+            if (!d) return []
+            if (activeChapterIndex == null || !d.chapters?.length) return []
+            const msgs = [] as Array<{ key: string; title: string; text: string }>
+            const startIdx = activeChapterIndex
+            const endIdx = Math.min(d.chapters.length - 1, startIdx + loadedChapterCount - 1)
+            for (let i = startIdx; i <= endIdx; i++) {
+              const ch = d.chapters[i]
+              const text = d.content.slice(ch.start, ch.end)
+              msgs.push({ key: `ch-${i}`, title: displayTraditional ? toTraditional(ch.title) : ch.title, text: displayTraditional ? toTraditional(text) : text })
+            }
+            return msgs
+          })()}
           onScroll={(scrollTop: number) => {
             if (!activeId) return
             setDocs((prev) => prev.map((d) => {
@@ -130,6 +147,14 @@ export default function App() {
               const key = activeChapterIndex != null ? `ch-${activeChapterIndex}` : 'all'
               return { ...d, scroll: { ...(d.scroll || {}), [key]: scrollTop } }
             }))
+          }}
+          onEndReached={() => {
+            const d = docs.find((x) => x.id === activeId)
+            if (!d || activeChapterIndex == null || !d.chapters?.length) return
+            const endIdx = Math.min(d.chapters.length - 1, activeChapterIndex + loadedChapterCount - 1)
+            if (endIdx < d.chapters.length - 1) {
+              setLoadedChapterCount((c) => c + 1)
+            }
           }}
         />
       </main>
