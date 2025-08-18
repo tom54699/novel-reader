@@ -14,6 +14,7 @@ export default function App() {
   const [docs, setDocs] = useState<AppState['docs']>([])
   const [searchState, setSearchState] = useState<SearchState>({ query: '', hits: [], currentIndex: 0 })
   const [error, setError] = useState<string | null>(null)
+  const searchInputRef = useRef<HTMLInputElement | null>(null)
 
   const openFilePicker = () => {
     setError(null)
@@ -30,6 +31,28 @@ export default function App() {
     const hits = searchInText(activeDoc.content, searchState.query)
     setSearchState((s) => ({ ...s, hits, currentIndex: hits.length ? Math.min(s.currentIndex, hits.length - 1) : 0 }))
   }, [searchState.query, activeId, docs])
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'f') {
+        e.preventDefault()
+        searchInputRef.current?.focus()
+      } else if (e.key === 'Enter') {
+        if (searchState.hits.length) {
+          e.preventDefault()
+          setSearchState((s) => {
+            const total = s.hits.length
+            if (!total) return s
+            const next = e.shiftKey ? (s.currentIndex - 1 + total) % total : (s.currentIndex + 1) % total
+            return { ...s, currentIndex: next }
+          })
+        }
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [searchState.hits.length])
 
   const onFileSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -82,6 +105,7 @@ export default function App() {
             })
           }}
           onAddFile={openFilePicker}
+          inputRef={searchInputRef}
         />
       </div>
       <input

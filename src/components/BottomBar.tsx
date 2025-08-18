@@ -1,11 +1,12 @@
 export function BottomBar(props: any) {
-  const { searchState = { query: '', hits: [], currentIndex: 0 }, onSearch = () => {}, onNavigateSearch = () => {}, onAddFile = () => {} } = props
+  const { searchState = { query: '', hits: [], currentIndex: 0 }, onSearch = () => {}, onNavigateSearch = () => {}, onAddFile = () => {}, inputRef } = props
   return (
     <div className="bottombar-inner">
       <button className="add-btn" aria-label="Add file" title="Add file" onClick={onAddFile}>
         +
       </button>
       <input
+        ref={inputRef}
         className="search-input"
         placeholder="Search in file"
         value={searchState.query}
