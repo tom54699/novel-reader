@@ -68,6 +68,7 @@ body {
 
 .tool-wrap { position: relative; }
 .tool-menu { position: absolute; bottom: 44px; left: 0; background: #2f313a; border: 1px solid #3f414b; border-radius: 10px; padding: 6px; min-width: 180px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+.tool-menu { z-index: 5; }
 .menu-item { width: 100%; text-align: left; background: transparent; color: #e5e7eb; border: none; padding: 8px 10px; border-radius: 8px; cursor: pointer; }
 .menu-item:hover { background: #3a3b45; }
 .menu-item.checked { color: #10a37f; }

@@ -8,7 +8,7 @@ import { generateId } from './utils/id'
 import { searchInText } from './utils/search'
 import { useEffect } from 'react'
 import { parseChapters } from './utils/chapters'
-import { toTraditional } from './utils/traditional'
+import { toTraditional as toTraditionalQuick, ensureOpenCC, toTraditionalOpenCC } from './utils/traditional'
 
 export default function App() {
   const fileInputRef = useRef<HTMLInputElement | null>(null)
@@ -22,6 +22,7 @@ export default function App() {
   const [displayTraditional, setDisplayTraditional] = useState(false)
   const [loadedStartChapterIndex, setLoadedStartChapterIndex] = useState<number | null>(null)
   const [loadedMessages, setLoadedMessages] = useState<Array<{ key: string; title: string; text: string }>>([])
+  const [wholeConverted, setWholeConverted] = useState<string | null>(null)
 
   const openFilePicker = () => {
     setError(null)
@@ -38,7 +39,7 @@ export default function App() {
         displayText = loadedMessages.map((m) => m.text).join('\n\n')
       } else {
         // Whole document view
-        displayText = displayTraditional ? toTraditional(activeDoc.content) : activeDoc.content
+        displayText = displayTraditional ? (wholeConverted ?? toTraditionalQuick(activeDoc.content)) : activeDoc.content
       }
     }
     if (!activeDoc || !searchState.query) {
@@ -47,7 +48,26 @@ export default function App() {
     }
     const hits = searchInText(displayText, searchState.query)
     setSearchState((s) => ({ ...s, hits, currentIndex: hits.length ? Math.min(s.currentIndex, hits.length - 1) : 0 }))
-  }, [searchState.query, activeId, docs, activeChapterIndex, displayTraditional, loadedMessages])
+  }, [searchState.query, activeId, docs, activeChapterIndex, displayTraditional, loadedMessages, wholeConverted])
+
+  // When toggling Traditional in non-chapter mode, compute OpenCC result lazily
+  useEffect(() => {
+    const d = docs.find((x) => x.id === activeId)
+    setWholeConverted(null)
+    if (!displayTraditional || !d) return
+    if (activeChapterIndex != null) return
+    let alive = true
+    ;(async () => {
+      await ensureOpenCC()
+      if (!alive) return
+      const txt = await toTraditionalOpenCC(d.content)
+      if (!alive) return
+      setWholeConverted(txt)
+    })()
+    return () => {
+      alive = false
+    }
+  }, [displayTraditional, activeId, activeChapterIndex, docs])
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -120,13 +140,17 @@ export default function App() {
             if (d && d.chapters && d.chapters[idx]) {
               const ch = d.chapters[idx]
               const text = d.content.slice(ch.start, ch.end)
-              setLoadedMessages([
-                {
-                  key: `ch-${idx}`,
-                  title: displayTraditional ? toTraditional(ch.title) : ch.title,
-                  text: displayTraditional ? toTraditional(text) : text,
-                },
-              ])
+              const titleQuick = displayTraditional ? toTraditionalQuick(ch.title) : ch.title
+              const textQuick = displayTraditional ? toTraditionalQuick(text) : text
+              setLoadedMessages([{ key: `ch-${idx}`, title: titleQuick, text: textQuick }])
+              if (displayTraditional) {
+                ;(async () => {
+                  await ensureOpenCC()
+                  const betterTitle = await toTraditionalOpenCC(ch.title)
+                  const better = await toTraditionalOpenCC(text)
+                  setLoadedMessages([{ key: `ch-${idx}`, title: betterTitle, text: better }])
+                })()
+              }
             } else {
               setLoadedMessages([])
             }
@@ -142,7 +166,7 @@ export default function App() {
             const key = activeChapterIndex != null ? `ch-${activeChapterIndex}` : 'all'
             // In non-chapter mode, convert whole content according to toggle
             const content = activeChapterIndex == null
-              ? (displayTraditional ? toTraditional(d.content) : d.content)
+              ? (displayTraditional ? (wholeConverted ?? toTraditionalQuick(d.content)) : d.content)
               : d.content
             return { ...d, content, scrollTop: d.scroll?.[key] ?? d.scrollTop }
           })()}
@@ -163,14 +187,17 @@ export default function App() {
             if (nextIdx >= d.chapters.length) return
             const ch = d.chapters[nextIdx]
             const text = d.content.slice(ch.start, ch.end)
-            setLoadedMessages((arr) => [
-              ...arr,
-              {
-                key: `ch-${nextIdx}`,
-                title: displayTraditional ? toTraditional(ch.title) : ch.title,
-                text: displayTraditional ? toTraditional(text) : text,
-              },
-            ])
+            const titleQuick = displayTraditional ? toTraditionalQuick(ch.title) : ch.title
+            const textQuick = displayTraditional ? toTraditionalQuick(text) : text
+            setLoadedMessages((arr) => [...arr, { key: `ch-${nextIdx}`, title: titleQuick, text: textQuick }])
+            if (displayTraditional) {
+              ;(async () => {
+                await ensureOpenCC()
+                const betterTitle = await toTraditionalOpenCC(ch.title)
+                const better = await toTraditionalOpenCC(text)
+                setLoadedMessages((arr) => arr.map((m) => (m.key === `ch-${nextIdx}` ? { ...m, title: betterTitle, text: better } : m)))
+              })()
+            }
           }}
         />
       </main>

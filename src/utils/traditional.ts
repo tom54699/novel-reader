@@ -19,11 +19,68 @@ const mapPairs: Array<[string, string]> = [
 
 const mapS2T = new Map(mapPairs)
 
-export function toTraditional(input: string): string {
-  // Replace char by char; best-effort for MVP
+export function toTraditionalQuick(input: string): string {
   let out = ''
-  for (const ch of input) {
-    out += mapS2T.get(ch) ?? ch
-  }
+  for (const ch of input) out += mapS2T.get(ch) ?? ch
   return out
 }
+
+let openccConverter: any | null = null
+let openccLoading: Promise<any> | null = null
+
+export async function ensureOpenCC(): Promise<void> {
+  if (openccConverter) return
+  if (!openccLoading) {
+    openccLoading = (async () => {
+      try {
+        const mod: any = await import('opencc-js')
+        // Try common APIs across versions
+        if (mod && typeof mod.default?.init === 'function') {
+          // Newer API pattern
+          await mod.default.init()
+          // s2tw config
+          return new mod.default.Converter({ from: 'cn', to: 'tw' })
+        }
+        if (mod && typeof mod.OpenCC === 'function') {
+          const inst = new mod.OpenCC('s2tw.json')
+          await inst.init()
+          return inst
+        }
+        // Fallback: try default as constructor
+        if (typeof mod.default === 'function') {
+          const inst = new mod.default('s2tw.json')
+          if (typeof inst.init === 'function') await inst.init()
+          return inst
+        }
+        return null
+      } catch (e) {
+        return null
+      }
+    })()
+  }
+  openccConverter = await openccLoading
+}
+
+export function hasOpenCC(): boolean {
+  return !!openccConverter
+}
+
+export async function toTraditionalOpenCC(input: string): Promise<string> {
+  if (!openccConverter) return toTraditionalQuick(input)
+  try {
+    if (typeof openccConverter.convertPromise === 'function') {
+      return await openccConverter.convertPromise(input)
+    }
+    if (typeof openccConverter.convert === 'function') {
+      const res = openccConverter.convert(input)
+      if (res && typeof res.then === 'function') return await res
+      return res
+    }
+  } catch (_) {
+    // ignore
+  }
+  return toTraditionalQuick(input)
+}
+
+// Backward-compatible export name
+export const toTraditional = toTraditionalQuick
