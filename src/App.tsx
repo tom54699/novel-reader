@@ -110,9 +110,40 @@ export default function App() {
       const newDoc: Doc = { id: generateId(), name: file.name, size: file.size, content, chapters }
       setDocs((prev) => [newDoc, ...prev])
       setActiveId(newDoc.id)
-      setActiveChapterIndex(null)
-      setLoadedStartChapterIndex(null)
-      setLoadedMessages([])
+      if (chapters && chapters.length) {
+        // Default to chapter mode: load up to first 5 chapters
+        setActiveChapterIndex(0)
+        setLoadedStartChapterIndex(0)
+        const end = Math.min(5, chapters.length)
+        const initial: Array<{ key: string; title: string; text: string }> = []
+        for (let i = 0; i < end; i++) {
+          const ch = chapters[i]!
+          const text = content.slice(ch.start, ch.end)
+          const titleQuick = displayTraditional ? toTraditionalQuick(ch.title) : ch.title
+          const textQuick = displayTraditional ? toTraditionalQuick(text) : text
+          initial.push({ key: `ch-${i}`, title: titleQuick, text: textQuick })
+        }
+        setLoadedMessages(initial)
+        if (displayTraditional) {
+          ;(async () => {
+            await ensureOpenCC()
+            const refined: Array<{ key: string; title: string; text: string }> = []
+            for (let i = 0; i < end; i++) {
+              const ch = chapters[i]!
+              const text = content.slice(ch.start, ch.end)
+              const betterTitle = await toTraditionalOpenCC(ch.title)
+              const better = await toTraditionalOpenCC(text)
+              refined.push({ key: `ch-${i}`, title: betterTitle, text: better })
+            }
+            setLoadedMessages(refined)
+          })()
+        }
+      } else {
+        // No chapters found: show whole document
+        setActiveChapterIndex(null)
+        setLoadedStartChapterIndex(null)
+        setLoadedMessages([])
+      }
     } catch (err: any) {
       setError(err?.message || '無法解析文字')
     } finally {
@@ -138,17 +169,29 @@ export default function App() {
             setLoadedStartChapterIndex(idx)
             const d = docs.find((x) => x.id === activeId)
             if (d && d.chapters && d.chapters[idx]) {
-              const ch = d.chapters[idx]
-              const text = d.content.slice(ch.start, ch.end)
-              const titleQuick = displayTraditional ? toTraditionalQuick(ch.title) : ch.title
-              const textQuick = displayTraditional ? toTraditionalQuick(text) : text
-              setLoadedMessages([{ key: `ch-${idx}`, title: titleQuick, text: textQuick }])
+              const start = idx
+              const end = Math.min(idx + 5, d.chapters.length)
+              const initial: Array<{ key: string; title: string; text: string }> = []
+              for (let i = start; i < end; i++) {
+                const ch = d.chapters[i]!
+                const text = d.content.slice(ch.start, ch.end)
+                const titleQuick = displayTraditional ? toTraditionalQuick(ch.title) : ch.title
+                const textQuick = displayTraditional ? toTraditionalQuick(text) : text
+                initial.push({ key: `ch-${i}`, title: titleQuick, text: textQuick })
+              }
+              setLoadedMessages(initial)
               if (displayTraditional) {
                 ;(async () => {
                   await ensureOpenCC()
-                  const betterTitle = await toTraditionalOpenCC(ch.title)
-                  const better = await toTraditionalOpenCC(text)
-                  setLoadedMessages([{ key: `ch-${idx}`, title: betterTitle, text: better }])
+                  const refined: Array<{ key: string; title: string; text: string }> = []
+                  for (let i = start; i < end; i++) {
+                    const ch = d.chapters[i]!
+                    const text = d.content.slice(ch.start, ch.end)
+                    const betterTitle = await toTraditionalOpenCC(ch.title)
+                    const better = await toTraditionalOpenCC(text)
+                    refined.push({ key: `ch-${i}`, title: betterTitle, text: better })
+                  }
+                  setLoadedMessages(refined)
                 })()
               }
             } else {
@@ -168,7 +211,7 @@ export default function App() {
             const content = activeChapterIndex == null
               ? (displayTraditional ? (wholeConverted ?? toTraditionalQuick(d.content)) : d.content)
               : d.content
-            return { ...d, content, scrollTop: d.scroll?.[key] ?? d.scrollTop }
+            return { ...d, content, scrollTop: d.scroll?.[key] ?? 0 }
           })()}
           searchState={searchState}
           messages={activeChapterIndex != null ? loadedMessages : []}
@@ -180,12 +223,36 @@ export default function App() {
               return { ...d, scroll: { ...(d.scroll || {}), [key]: scrollTop } }
             }))
           }}
+          onVisibleChapterIndex={(idx: number) => {
+            if (activeChapterIndex == null) return
+            if (idx !== activeChapterIndex) setActiveChapterIndex(idx)
+          }}
+          onStartReached={() => {
+            const d = docs.find((x) => x.id === activeId)
+            if (!d || loadedStartChapterIndex == null || !d.chapters?.length) return
+            if (loadedStartChapterIndex <= 0) return
+            const prevIdx = loadedStartChapterIndex - 1
+            const ch = d.chapters[prevIdx]!
+            const text = d.content.slice(ch.start, ch.end)
+            const titleQuick = displayTraditional ? toTraditionalQuick(ch.title) : ch.title
+            const textQuick = displayTraditional ? toTraditionalQuick(text) : text
+            setLoadedStartChapterIndex(prevIdx)
+            setLoadedMessages((arr) => [{ key: `ch-${prevIdx}`, title: titleQuick, text: textQuick }, ...arr])
+            if (displayTraditional) {
+              ;(async () => {
+                await ensureOpenCC()
+                const betterTitle = await toTraditionalOpenCC(ch.title)
+                const better = await toTraditionalOpenCC(text)
+                setLoadedMessages((arr) => arr.map((m) => (m.key === `ch-${prevIdx}` ? { ...m, title: betterTitle, text: better } : m)))
+              })()
+            }
+          }}
           onEndReached={() => {
             const d = docs.find((x) => x.id === activeId)
             if (!d || loadedStartChapterIndex == null || !d.chapters?.length) return
             const nextIdx = loadedStartChapterIndex + loadedMessages.length
             if (nextIdx >= d.chapters.length) return
-            const ch = d.chapters[nextIdx]
+            const ch = d.chapters[nextIdx]!
             const text = d.content.slice(ch.start, ch.end)
             const titleQuick = displayTraditional ? toTraditionalQuick(ch.title) : ch.title
             const textQuick = displayTraditional ? toTraditionalQuick(text) : text
@@ -199,6 +266,18 @@ export default function App() {
               })()
             }
           }}
+          hasPrev={(function() {
+            const d = docs.find((x) => x.id === activeId)
+            if (!d || activeChapterIndex == null || loadedStartChapterIndex == null) return true
+            return loadedStartChapterIndex > 0
+          })()}
+          hasNext={(function() {
+            const d = docs.find((x) => x.id === activeId)
+            if (!d || activeChapterIndex == null || loadedStartChapterIndex == null) return true
+            const endIdx = loadedStartChapterIndex + loadedMessages.length
+            return endIdx < (d.chapters?.length || 0)
+          })()}
+          edgeText={'已無更多內容'}
         />
       </main>
       <div className="bottombar">
