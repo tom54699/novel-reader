@@ -287,7 +287,7 @@ export default function App() {
             return { ...d, content, scrollTop: d.scroll?.[key] ?? 0 }
           })()}
           searchState={searchState}
-          messages={activeChapterIndex != null ? loadedMessages : []}
+          messages={activeChapterIndex != null ? loadedMessages : undefined}
           onScroll={(scrollTop: number) => {
             if (!activeId) return
             setDocs((prev) => prev.map((d) => {

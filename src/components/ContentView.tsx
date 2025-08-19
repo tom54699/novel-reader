@@ -139,7 +139,8 @@ export function ContentView(props: any) {
           {!hasPrev ? (
             <div className="edge-notice">{edgeText}</div>
           ) : null}
-          {Array.isArray(messages) && messages.length > 0 ? (
+          {Array.isArray(messages) ? (
+            messages.length > 0 ? (
             (() => {
               const offsets: number[] = []
               let acc = 0
@@ -157,6 +158,15 @@ export function ContentView(props: any) {
                 </div>
               ))
             })()
+            ) : (
+              <div className="message-row">
+                <div className="avatar">TXT</div>
+                <article className="bubble assistant">
+                  <div className="bubble-meta">{doc.name}</div>
+                  <div className="text-content">載入章節中…</div>
+                </article>
+              </div>
+            )
           ) : (
             <div className="message-row">
               <div className="avatar">TXT</div>

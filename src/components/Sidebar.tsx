@@ -4,10 +4,12 @@ function truncateMiddle(str: string, max = 30) {
   return str.slice(0, half) + '…' + str.slice(-half)
 }
 
+import { useState } from 'react'
 import { toTraditional } from '../utils/traditional'
 
 export function Sidebar(props: any) {
   const { docs = [], activeId = null, activeChapterIndex = null, onSelectDoc = () => {}, onSelectChapter = () => {}, traditional = false } = props
+  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({})
   const activeDoc = docs.find((d: any) => d.id === activeId)
   return (
     <div className="sidebar-inner">
@@ -22,8 +24,20 @@ export function Sidebar(props: any) {
               title={traditional ? toTraditional(doc.name) : doc.name}
             >
               <span className="file-name">{truncateMiddle(traditional ? toTraditional(doc.name) : doc.name, 40)}</span>
+              {doc.id === activeId && Array.isArray(activeDoc?.chapters) && activeDoc.chapters.length > 0 ? (
+                <span
+                  style={{ float: 'right', opacity: 0.8 }}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setCollapsed((m) => ({ ...m, [doc.id]: !m[doc.id] }))
+                  }}
+                  aria-label={collapsed[doc.id] ? '展開章節' : '收合章節'}
+                >
+                  {collapsed[doc.id] ? '▶' : '▼'}
+                </span>
+              ) : null}
             </button>
-            {activeDoc && doc.id === activeDoc.id && Array.isArray(activeDoc.chapters) && activeDoc.chapters.length > 0 && (
+            {activeDoc && doc.id === activeDoc.id && Array.isArray(activeDoc.chapters) && activeDoc.chapters.length > 0 && !collapsed[doc.id] && (
               <ul className="chapter-list">
                 {activeDoc.chapters.map((ch: any, idx: number) => (
                   <li key={idx}>
