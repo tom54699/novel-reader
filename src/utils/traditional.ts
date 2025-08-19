@@ -33,7 +33,8 @@ export async function ensureOpenCC(): Promise<void> {
   if (!openccLoading) {
     openccLoading = (async () => {
       try {
-        const mod: any = await import('opencc-js')
+        // Prefer the full ESM bundle to avoid runtime fetching of dicts
+        const mod: any = await import('opencc-js/dist/esm/full.js')
         // Try common APIs across versions
         // 1) ESM default export with Converter factory (no init required)
         if (mod?.default && typeof mod.default.Converter === 'function') {
@@ -70,6 +71,20 @@ export function hasOpenCC(): boolean {
   return !!openccConverter
 }
 
+// Synchronous converter for UI (best-effort):
+// if OpenCC is ready and exposes sync convert, use it; otherwise quick map.
+export function toTraditional(input: string): string {
+  try {
+    if (openccConverter && typeof openccConverter.convert === 'function') {
+      const res = openccConverter.convert(input)
+      // If convert returns a promise, fall back to quick to keep sync
+      if (res && typeof (res as any).then === 'function') return toTraditionalQuick(input)
+      return res
+    }
+  } catch (_) {}
+  return toTraditionalQuick(input)
+}
+
 export async function toTraditionalOpenCC(input: string): Promise<string> {
   if (!openccConverter) return toTraditionalQuick(input)
   try {
@@ -88,5 +103,4 @@ export async function toTraditionalOpenCC(input: string): Promise<string> {
   return toTraditionalQuick(input)
 }
 
-// Backward-compatible export name
-export const toTraditional = toTraditionalQuick
+// Note: `toTraditional` is now a real function above that prefers OpenCC

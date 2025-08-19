@@ -69,6 +69,14 @@ export default function App() {
     }
   }, [displayTraditional, activeId, activeChapterIndex, docs])
 
+  // Globally ensure OpenCC is ready when switching to Traditional, so UI (Sidebar titles) also use it
+  useEffect(() => {
+    if (!displayTraditional) return
+    ;(async () => {
+      await ensureOpenCC()
+    })()
+  }, [displayTraditional])
+
   // Keyboard shortcuts
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
