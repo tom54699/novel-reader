@@ -151,6 +151,40 @@ export default function App() {
     }
   }
 
+  // Rebuild currently loaded chapter messages when toggling Traditional
+  useEffect(() => {
+    const d = docs.find((x) => x.id === activeId)
+    if (!d) return
+    if (activeChapterIndex == null || loadedStartChapterIndex == null) return
+    if (!Array.isArray(d.chapters) || d.chapters.length === 0) return
+    const start = loadedStartChapterIndex
+    const end = Math.min(start + loadedMessages.length, d.chapters.length)
+    if (end <= start) return
+    const initial: Array<{ key: string; title: string; text: string }> = []
+    for (let i = start; i < end; i++) {
+      const ch = d.chapters[i]!
+      const text = d.content.slice(ch.start, ch.end)
+      const titleQuick = displayTraditional ? toTraditionalQuick(ch.title) : ch.title
+      const textQuick = displayTraditional ? toTraditionalQuick(text) : text
+      initial.push({ key: `ch-${i}`, title: titleQuick, text: textQuick })
+    }
+    setLoadedMessages(initial)
+    if (displayTraditional) {
+      ;(async () => {
+        await ensureOpenCC()
+        const refined: Array<{ key: string; title: string; text: string }> = []
+        for (let i = start; i < end; i++) {
+          const ch = d.chapters[i]!
+          const text = d.content.slice(ch.start, ch.end)
+          const betterTitle = await toTraditionalOpenCC(ch.title)
+          const better = await toTraditionalOpenCC(text)
+          refined.push({ key: `ch-${i}`, title: betterTitle, text: better })
+        }
+        setLoadedMessages(refined)
+      })()
+    }
+  }, [displayTraditional])
+
   return (
     <div className="app-root">
       <aside className="sidebar">

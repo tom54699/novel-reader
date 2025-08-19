@@ -92,25 +92,20 @@ export function ContentView(props: any) {
     const el = scrollerRef.current
     if (!el) return
     if (!Array.isArray(messages) || !messages.length) return
-    const containerTop = el.getBoundingClientRect().top
     const rows = Array.from(el.querySelectorAll('.bubble-stack .message-row')) as HTMLElement[]
+    // pick the last row whose top is <= threshold (i.e., its header is at/above viewport top)
+    let chosen: HTMLElement | null = null
+    const threshold = 10
     for (const row of rows) {
-      const rect = row.getBoundingClientRect()
-      const top = rect.top - containerTop
-      if (top >= -20) {
-        const key = row.getAttribute('data-key') || ''
-        const idx = key.startsWith('ch-') ? Number(key.slice(3)) : NaN
-        if (!Number.isNaN(idx)) onVisibleChapterIndex(idx)
-        return
-      }
+      const top = row.offsetTop - el.scrollTop
+      if (top <= threshold) chosen = row
+      else break
     }
-    // If scrolled past all, report last one
-    const last = rows[rows.length - 1]
-    if (last) {
-      const key = last.getAttribute('data-key') || ''
-      const idx = key.startsWith('ch-') ? Number(key.slice(3)) : NaN
-      if (!Number.isNaN(idx)) onVisibleChapterIndex(idx)
-    }
+    if (!chosen) chosen = rows[0] || null
+    if (!chosen) return
+    const key = chosen.getAttribute('data-key') || ''
+    const idx = key.startsWith('ch-') ? Number(key.slice(3)) : NaN
+    if (!Number.isNaN(idx)) onVisibleChapterIndex(idx)
   }
 
   return (
