@@ -9,6 +9,7 @@ import { searchInText } from './utils/search'
 import { useEffect } from 'react'
 import { parseChapters, findChapterGaps } from './utils/chapters'
 import { toTraditional as toTraditionalQuick, ensureOpenCC, toTraditionalOpenCC } from './utils/traditional'
+import { loadHistory, saveHistory, upsertHistory } from './utils/history'
 
 export default function App() {
   const fileInputRef = useRef<HTMLInputElement | null>(null)
@@ -27,6 +28,7 @@ export default function App() {
   const [readerFont, setReaderFont] = useState(18)
   const [readerLine, setReaderLine] = useState(1.8)
   const [readerWidth, setReaderWidth] = useState(860)
+  const [historyList, setHistoryList] = useState(loadHistory())
 
   const openFilePicker = () => {
     setError(null)
@@ -173,6 +175,20 @@ export default function App() {
       setLoading(false)
     }
   }
+
+  // Update viewing history when active doc/chapter changes
+  useEffect(() => {
+    const d = docs.find((x) => x.id === activeId)
+    if (!d) return
+    const idx = activeChapterIndex
+    const title = idx != null && d.chapters && d.chapters[idx] ? d.chapters[idx].title : '全文'
+    const entry = { docId: d.id, docName: d.name, chapterIndex: idx, chapterTitle: title, ts: Date.now() }
+    setHistoryList((list) => {
+      const next = upsertHistory(list, entry, 50)
+      saveHistory(next)
+      return next
+    })
+  }, [activeId, activeChapterIndex])
 
   // Rebuild currently loaded chapter messages when toggling Traditional
   useEffect(() => {
@@ -355,6 +371,49 @@ export default function App() {
           onAdjustFont={(d: number) => setReaderFont((v) => Math.max(12, Math.min(32, v + d)))}
           onAdjustLine={(d: number) => setReaderLine((v) => Math.max(1.2, Math.min(2.4, Math.round((v + d) * 10) / 10)))}
           onAdjustWidth={(d: number) => setReaderWidth((v) => Math.max(640, Math.min(1200, v + d)))}
+          history={historyList.slice(0, 12)}
+          onOpenHistory={(h: any) => {
+            setActiveId(h.docId)
+            if (h.chapterIndex != null) {
+              // Reuse chapter selection logic
+              const d = docs.find((x) => x.id === h.docId)
+              if (d && d.chapters && d.chapters[h.chapterIndex]) {
+                const idx = h.chapterIndex
+                setActiveChapterIndex(idx)
+                setLoadedStartChapterIndex(idx)
+                const start = idx
+                const end = Math.min(idx + 5, d.chapters.length)
+                if (displayTraditional) {
+                  ;(async () => {
+                    setLoading(true)
+                    await ensureOpenCC()
+                    const refined: Array<{ key: string; title: string; text: string }> = []
+                    for (let i = start; i < end; i++) {
+                      const ch = d.chapters![i]!
+                      const text = d.content.slice(ch.start, ch.end)
+                      const betterTitle = await toTraditionalOpenCC(ch.title)
+                      const better = await toTraditionalOpenCC(text)
+                      refined.push({ key: `ch-${i}`, title: betterTitle, text: better })
+                    }
+                    setLoadedMessages(refined)
+                    setLoading(false)
+                  })()
+                } else {
+                  const initial: Array<{ key: string; title: string; text: string }> = []
+                  for (let i = start; i < end; i++) {
+                    const ch = d.chapters![i]!
+                    const text = d.content.slice(ch.start, ch.end)
+                    initial.push({ key: `ch-${i}`, title: ch.title, text })
+                  }
+                  setLoadedMessages(initial)
+                }
+              }
+            } else {
+              setActiveChapterIndex(null)
+              setLoadedStartChapterIndex(null)
+              setLoadedMessages([])
+            }
+          }}
         />
       </div>
       <input
