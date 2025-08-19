@@ -3,7 +3,9 @@
   --sidebar-bg: #202123; /* ChatGPT */
   --hover: #2a2b32;
   --active: #343541;
-  --content-max: 720px;
+  --content-max: 860px;
+  --font-size: 18px;
+  --line-height: 1.8;
 }
 
 html, body, #root {
@@ -52,7 +54,7 @@ body {
 .message-row { display: flex; align-items: flex-start; gap: 12px; }
 .avatar { width: 28px; height: 28px; border-radius: 50%; background: #10a37f; color: #fff; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex: 0 0 28px; box-shadow: 0 1px 2px rgba(0,0,0,0.12); }
 .bubble-meta { color: #d1d5db; font-size: 12px; margin-bottom: 8px; }
-.text-content { color: #e5e7eb; font-family: 'Courier New', Consolas, monospace; font-size: 18px; line-height: 1.8; white-space: pre-wrap; word-break: break-word; }
+.text-content { color: #e5e7eb; font-family: 'Courier New', Consolas, monospace; font-size: var(--font-size); line-height: var(--line-height); white-space: pre-wrap; word-break: break-word; }
 .hit { background: #f7d469; color: #111; }
 .hit-current { outline: 2px solid #f59e0b; outline-offset: 2px; }
 .placeholder { color: #888; margin: 24px; }

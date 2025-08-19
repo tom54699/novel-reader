@@ -1,7 +1,7 @@
 import { useState } from 'react'
 
 export function BottomBar(props: any) {
-  const { searchState = { query: '', hits: [], currentIndex: 0 }, onSearch = () => {}, onNavigateSearch = () => {}, onAddFile = () => {}, inputRef, onToggleTraditional = () => {}, traditional = false } = props
+  const { searchState = { query: '', hits: [], currentIndex: 0 }, onSearch = () => {}, onNavigateSearch = () => {}, onAddFile = () => {}, inputRef, onToggleTraditional = () => {}, traditional = false, onAdjustFont = (_d: number) => {}, onAdjustLine = (_d: number) => {}, onAdjustWidth = (_d: number) => {} } = props
   const [menuOpen, setMenuOpen] = useState(false)
   return (
     <div className="bottombar-inner">
@@ -32,6 +32,12 @@ export function BottomBar(props: any) {
               >
                 {traditional ? '✓ ' : ''}繁體顯示
               </button>
+              <button type="button" className="menu-item" onClick={() => onAdjustFont(-1)}>字體 -</button>
+              <button type="button" className="menu-item" onClick={() => onAdjustFont(+1)}>字體 +</button>
+              <button type="button" className="menu-item" onClick={() => onAdjustLine(-0.1)}>行距 -</button>
+              <button type="button" className="menu-item" onClick={() => onAdjustLine(+0.1)}>行距 +</button>
+              <button type="button" className="menu-item" onClick={() => onAdjustWidth(+80)}>內容變寬</button>
+              <button type="button" className="menu-item" onClick={() => onAdjustWidth(-80)}>內容變窄</button>
             </div>
           )}
         </div>

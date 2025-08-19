@@ -7,7 +7,7 @@ import { validateFile, readFileAsText } from './utils/file'
 import { generateId } from './utils/id'
 import { searchInText } from './utils/search'
 import { useEffect } from 'react'
-import { parseChapters } from './utils/chapters'
+import { parseChapters, findChapterGaps } from './utils/chapters'
 import { toTraditional as toTraditionalQuick, ensureOpenCC, toTraditionalOpenCC } from './utils/traditional'
 
 export default function App() {
@@ -23,6 +23,10 @@ export default function App() {
   const [loadedStartChapterIndex, setLoadedStartChapterIndex] = useState<number | null>(null)
   const [loadedMessages, setLoadedMessages] = useState<Array<{ key: string; title: string; text: string }>>([])
   const [wholeConverted, setWholeConverted] = useState<string | null>(null)
+  const [warning, setWarning] = useState<string | null>(null)
+  const [readerFont, setReaderFont] = useState(18)
+  const [readerLine, setReaderLine] = useState(1.8)
+  const [readerWidth, setReaderWidth] = useState(860)
 
   const openFilePicker = () => {
     setError(null)
@@ -115,6 +119,18 @@ export default function App() {
       setLoading(true)
       const content = await readFileAsText(file)
       const chapters = parseChapters(content)
+      // Chapter gap detection
+      try {
+        const gaps = findChapterGaps(chapters)
+        if (gaps.length) {
+          const head = gaps.slice(0, 12).join('、') + (gaps.length > 12 ? '…' : '')
+          setWarning(`章節可能缺漏：缺少 ${head}`)
+        } else {
+          setWarning(null)
+        }
+      } catch (_) {
+        // ignore analysis errors
+      }
       const newDoc: Doc = { id: generateId(), name: file.name, size: file.size, content, chapters }
       setDocs((prev) => [newDoc, ...prev])
       setActiveId(newDoc.id)
@@ -192,7 +208,7 @@ export default function App() {
   }, [displayTraditional])
 
   return (
-    <div className="app-root">
+    <div className="app-root" style={{ ['--content-max' as any]: `${readerWidth}px`, ['--font-size' as any]: `${readerFont}px`, ['--line-height' as any]: String(readerLine) }}>
       <aside className="sidebar">
         <Sidebar
           docs={docs}
@@ -336,6 +352,9 @@ export default function App() {
           inputRef={searchInputRef}
           onToggleTraditional={() => setDisplayTraditional((v) => !v)}
           traditional={displayTraditional}
+          onAdjustFont={(d: number) => setReaderFont((v) => Math.max(12, Math.min(32, v + d)))}
+          onAdjustLine={(d: number) => setReaderLine((v) => Math.max(1.2, Math.min(2.4, Math.round((v + d) * 10) / 10)))}
+          onAdjustWidth={(d: number) => setReaderWidth((v) => Math.max(640, Math.min(1200, v + d)))}
         />
       </div>
       <input
@@ -346,6 +365,7 @@ export default function App() {
         style={{ display: 'none' }}
       />
       {error && <div className="error-banner" role="alert">{error}</div>}
+      {warning && <div className="error-banner" role="status" aria-live="polite">{warning}</div>}
       {loading && <div className="loading-indicator">Loading…</div>}
     </div>
   )
