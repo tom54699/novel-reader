@@ -31,17 +31,40 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: pnpm
-          cache-dependency-path: pnpm-lock.yaml
 
-      - name: Install deps
+      - name: Detect package manager
+        id: pm
+        run: echo "pm=$(node -e "console.log((require('./package.json').packageManager||'').split('@')[0])")" >> $GITHUB_OUTPUT
+
+      - name: Install deps (pnpm)
+        if: steps.pm.outputs.pm == 'pnpm'
         run: pnpm install --frozen-lockfile
 
-      - name: Build
+      - name: Install deps (yarn)
+        if: steps.pm.outputs.pm == 'yarn'
+        run: yarn install --frozen-lockfile
+
+      - name: Install deps (npm)
+        if: steps.pm.outputs.pm == ''
+        run: npm ci
+
+      - name: Build (pnpm)
+        if: steps.pm.outputs.pm == 'pnpm'
         env:
-          # Use repo name as base path for project pages
           BASE_URL: /${{ github.event.repository.name }}/
         run: pnpm build
+
+      - name: Build (yarn)
+        if: steps.pm.outputs.pm == 'yarn'
+        env:
+          BASE_URL: /${{ github.event.repository.name }}/
+        run: yarn build
+
+      - name: Build (npm)
+        if: steps.pm.outputs.pm == ''
+        env:
+          BASE_URL: /${{ github.event.repository.name }}/
+        run: npm run build --if-present
 
       - name: SPA fallback (404.html)
         run: cp dist/index.html dist/404.html
