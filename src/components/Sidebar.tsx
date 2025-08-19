@@ -12,22 +12,42 @@ export function Sidebar(props: any) {
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({})
   const activeDoc = docs.find((d: any) => d.id === activeId)
   const mask = (name: string, idx: number) => {
-    const pool = ['New chat', 'API Design Tips', 'Debugging Guide', 'React Patterns', 'SQL Basics', 'TypeScript Notes', 'Performance Tuning', 'Unit Testing']
+    const pool = [
+      'New chat',
+      'React rendering profile',
+      'TypeScript strictness fixes',
+      'Vite + GitHub Pages base',
+      'OpenCC integration notes',
+      'Search highlight strategy',
+      'Scroll compensation tips',
+      'State management patterns',
+      'Testing-library basics',
+      'CI with Corepack',
+      'SPA 404 fallback',
+      'Lazy loading chapters',
+    ]
     return pool[idx % pool.length]
   }
   return (
     <div className="sidebar-inner">
       <div className="sidebar-header">{camouflage ? 'ChatGPT' : 'Files'}</div>
       <ul className="file-list">
+        {camouflage ? (
+          <li key="__new__">
+            <button type="button" className={'file-item'} title={'New chat'} disabled>
+              <span className="file-name">New chat</span>
+            </button>
+          </li>
+        ) : null}
         {docs.map((doc: any, i: number) => (
           <li key={doc.id}>
             <button
               type="button"
               className={doc.id === activeId ? 'file-item active' : 'file-item'}
               onClick={() => onSelectDoc(doc.id)}
-              title={camouflage ? mask(doc.name, i) : (traditional ? toTraditional(doc.name) : doc.name)}
+              title={camouflage ? mask(doc.name, i + 1) : (traditional ? toTraditional(doc.name) : doc.name)}
             >
-              <span className="file-name">{truncateMiddle(camouflage ? mask(doc.name, i) : (traditional ? toTraditional(doc.name) : doc.name), 40)}</span>
+              <span className="file-name">{truncateMiddle(camouflage ? mask(doc.name, i + 1) : (traditional ? toTraditional(doc.name) : doc.name), 40)}</span>
               {!camouflage && doc.id === activeId && Array.isArray(activeDoc?.chapters) && activeDoc.chapters.length > 0 ? (
                 <span
                   style={{ float: 'right', opacity: 0.8 }}

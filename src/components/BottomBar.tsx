@@ -1,13 +1,26 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 export function BottomBar(props: any) {
   const { searchState = { query: '', hits: [], currentIndex: 0 }, onSearch = () => {}, onNavigateSearch = () => {}, onAddFile = () => {}, onAddFolder = () => {}, inputRef, onToggleTraditional = () => {}, traditional = false, onAdjustFont = (_d: number) => {}, onAdjustLine = (_d: number) => {}, onAdjustWidth = (_d: number) => {}, history = [], onOpenHistory = (_item: any) => {}, onToggleCamouflage = () => {}, camouflage = false } = props
   const [menuOpen, setMenuOpen] = useState(false)
+  const wrapRef = useRef<HTMLDivElement | null>(null)
+  useEffect(() => {
+    const onDocClick = (e: MouseEvent) => {
+      if (!menuOpen) return
+      const wrap = wrapRef.current
+      if (!wrap) return
+      if (e.target && wrap.contains(e.target as Node)) return
+      setMenuOpen(false)
+      setSubmenu(null)
+    }
+    document.addEventListener('mousedown', onDocClick)
+    return () => document.removeEventListener('mousedown', onDocClick)
+  }, [menuOpen])
   const [submenu, setSubmenu] = useState<null | 'settings' | 'history'>(null)
   return (
     <div className="bottombar-inner">
       <div className="bar-surface">
-        <div className="tool-wrap">
+        <div className="tool-wrap" ref={wrapRef}>
           <button className="add-btn" aria-label="Open tools" title="工具" onClick={() => { setMenuOpen((v) => !v); setSubmenu(null) }}>
             +
           </button>

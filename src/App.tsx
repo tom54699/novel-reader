@@ -233,8 +233,10 @@ export default function App() {
     }
   }, [displayTraditional])
 
+  const effectiveWidth = camouflage ? Math.max(readerWidth, 1040) : readerWidth
+
   return (
-    <div className="app-root" style={{ ['--content-max' as any]: `${readerWidth}px`, ['--font-size' as any]: `${readerFont}px`, ['--line-height' as any]: String(readerLine) }}>
+    <div className="app-root" style={{ ['--content-max' as any]: `${effectiveWidth}px`, ['--font-size' as any]: `${readerFont}px`, ['--line-height' as any]: String(readerLine) }}>
       <aside className="sidebar">
         <Sidebar
           docs={docs}
