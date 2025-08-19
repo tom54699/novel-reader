@@ -12,6 +12,7 @@ export function ContentView(props: any) {
     hasNext = true,
     edgeText = '已無更多內容',
     onVisibleChapterIndex = (_idx: number) => {},
+    camouflage = false,
   } = props
   const scrollerRef = useRef<HTMLDivElement | null>(null)
   const prevScrollHeightRef = useRef<number | null>(null)
@@ -153,7 +154,9 @@ export function ContentView(props: any) {
                   <div className="avatar">TXT</div>
                   <article className={'bubble assistant'}>
                     {m.title ? <div className="bubble-meta">{m.title}</div> : null}
-                    {renderWithHighlights(String(m.text ?? ''), offsets[idx] ?? 0)}
+                    {camouflage
+                      ? <pre className="text-content">{`# 技術筆記\n\n本文示範 React、TypeScript 與效能最佳化的常見技巧。\n\n- useMemo 與 useCallback\n- 並發特性與過渡\n- 型別守衛避免非預期\n\nconst add = (a: number, b: number) => a + b;`}</pre>
+                      : renderWithHighlights(String(m.text ?? ''), offsets[idx] ?? 0)}
                   </article>
                 </div>
               ))
@@ -172,7 +175,9 @@ export function ContentView(props: any) {
               <div className="avatar">TXT</div>
               <article className="bubble assistant">
                 <div className="bubble-meta">{doc.name}</div>
-                {renderWithHighlights(content, 0)}
+                {camouflage
+                  ? <pre className="text-content">{`# 架構說明\n\n此頁面為單頁應用（SPA），使用 Vite + React。\n\n- 組件化：Sidebar / ContentView / BottomBar\n- 功能：章節分段載入、搜尋、高亮\n- 工具：OpenCC 進行簡繁轉換`}</pre>
+                  : renderWithHighlights(content, 0)}
               </article>
             </div>
           )}

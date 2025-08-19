@@ -1,7 +1,7 @@
 import { useState } from 'react'
 
 export function BottomBar(props: any) {
-  const { searchState = { query: '', hits: [], currentIndex: 0 }, onSearch = () => {}, onNavigateSearch = () => {}, onAddFile = () => {}, onAddFolder = () => {}, inputRef, onToggleTraditional = () => {}, traditional = false, onAdjustFont = (_d: number) => {}, onAdjustLine = (_d: number) => {}, onAdjustWidth = (_d: number) => {}, history = [], onOpenHistory = (_item: any) => {} } = props
+  const { searchState = { query: '', hits: [], currentIndex: 0 }, onSearch = () => {}, onNavigateSearch = () => {}, onAddFile = () => {}, onAddFolder = () => {}, inputRef, onToggleTraditional = () => {}, traditional = false, onAdjustFont = (_d: number) => {}, onAdjustLine = (_d: number) => {}, onAdjustWidth = (_d: number) => {}, history = [], onOpenHistory = (_item: any) => {}, onToggleCamouflage = () => {}, camouflage = false } = props
   const [menuOpen, setMenuOpen] = useState(false)
   const [submenu, setSubmenu] = useState<null | 'settings' | 'history'>(null)
   return (
@@ -47,6 +47,16 @@ export function BottomBar(props: any) {
                   </button>
                   <button type="button" className="menu-item" onClick={() => setSubmenu('settings')}>閱讀設定…</button>
                   <button type="button" className="menu-item" onClick={() => setSubmenu('history')}>觀看紀錄…</button>
+                  <button
+                    type="button"
+                    className={camouflage ? 'menu-item checked' : 'menu-item'}
+                    onClick={() => {
+                      onToggleCamouflage()
+                      setMenuOpen(false)
+                    }}
+                  >
+                    {camouflage ? '✓ ' : ''}偽裝模式（Ctrl/Cmd+Shift+H）
+                  </button>
                 </>
               )}
               {submenu === 'settings' && (

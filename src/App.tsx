@@ -30,6 +30,7 @@ export default function App() {
   const [readerLine, setReaderLine] = useState(1.8)
   const [readerWidth, setReaderWidth] = useState(860)
   const [historyList, setHistoryList] = useState(loadHistory())
+  const [camouflage, setCamouflage] = useState(false)
 
   const openFilePicker = () => {
     setError(null)
@@ -90,6 +91,10 @@ export default function App() {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'f') {
         e.preventDefault()
         searchInputRef.current?.focus()
+      } else if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'h') {
+        // Toggle camouflage (hide novel content)
+        e.preventDefault()
+        setCamouflage((v) => !v)
       } else if (e.key === 'Enter') {
         if (searchState.hits.length) {
           e.preventDefault()
@@ -334,6 +339,7 @@ export default function App() {
           })()}
           searchState={searchState}
           messages={activeChapterIndex != null ? loadedMessages : undefined}
+          camouflage={camouflage}
           onScroll={(scrollTop: number) => {
             if (!activeId) return
             setDocs((prev) => prev.map((d) => {
@@ -423,6 +429,8 @@ export default function App() {
           onAdjustWidth={(d: number) => setReaderWidth((v) => Math.max(640, Math.min(1200, v + d)))}
           onAddFolder={() => folderInputRef.current?.click()}
           history={historyList.slice(0, 12)}
+          onToggleCamouflage={() => setCamouflage((v) => !v)}
+          camouflage={camouflage}
           onOpenHistory={(h: any) => {
             setActiveId(h.docId)
             if (h.chapterIndex != null) {
