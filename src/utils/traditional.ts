@@ -33,30 +33,16 @@ export async function ensureOpenCC(): Promise<void> {
   if (!openccLoading) {
     openccLoading = (async () => {
       try {
-        // Prefer the full ESM bundle to avoid runtime fetching of dicts
-        const mod: any = await import('opencc-js/dist/esm/full.js')
-        // Try common APIs across versions
-        // 1) ESM default export with Converter factory (no init required)
+        const mod: any = await import('opencc-js')
+        // opencc-js@1.x full ESM: namespace export with Converter factory
+        if (mod && typeof mod.Converter === 'function') {
+          const conv = mod.Converter({ from: 'cn', to: 'tw' })
+          return { convert: (s: string) => conv(s) }
+        }
+        // Some builds may expose default.Converter
         if (mod?.default && typeof mod.default.Converter === 'function') {
           const conv = mod.default.Converter({ from: 'cn', to: 'tw' })
           return { convert: (s: string) => conv(s) }
-        }
-        // 2) Some builds expose default.init() then new Converter()
-        if (mod && typeof mod.default?.init === 'function' && typeof mod.default?.Converter === 'function') {
-          await mod.default.init()
-          const conv = new mod.default.Converter({ from: 'cn', to: 'tw' })
-          return conv
-        }
-        if (mod && typeof mod.OpenCC === 'function') {
-          const inst = new mod.OpenCC('s2tw.json')
-          await inst.init()
-          return inst
-        }
-        // Fallback: try default as constructor
-        if (typeof mod.default === 'function') {
-          const inst = new mod.default('s2tw.json')
-          if (typeof inst.init === 'function') await inst.init()
-          return inst
         }
         return null
       } catch (e) {
