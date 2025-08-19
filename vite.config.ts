@@ -4,8 +4,8 @@ import react from '@vitejs/plugin-react'
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
-  // Allow overriding base via env (e.g., GitHub Pages)
-  base: process.env.BASE_URL || '/',
+  // Use env BASE_URL when provided, otherwise use relative base to work on GitHub Pages subpaths
+  base: process.env.BASE_URL || './',
   build: {
     target: 'es2018',
     sourcemap: false,
