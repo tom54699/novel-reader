@@ -240,6 +240,7 @@ export default function App() {
           docs={docs}
           activeId={activeId}
           activeChapterIndex={activeChapterIndex}
+          camouflage={camouflage}
           onSelectDoc={(id: string) => {
             setActiveId(id)
             const d = docs.find((x) => x.id === id)

@@ -151,7 +151,7 @@ export function ContentView(props: any) {
               }
               return messages.map((m: any, idx: number) => (
                 <div className="message-row" key={m.key ?? idx} data-key={m.key ?? `idx-${idx}`}>
-                  <div className="avatar">TXT</div>
+                  <div className="avatar">{camouflage ? 'GPT' : 'TXT'}</div>
                   <article className={'bubble assistant'}>
                     {m.title ? <div className="bubble-meta">{m.title}</div> : null}
                     {camouflage
@@ -163,7 +163,7 @@ export function ContentView(props: any) {
             })()
             ) : (
               <div className="message-row">
-                <div className="avatar">TXT</div>
+                <div className="avatar">{camouflage ? 'GPT' : 'TXT'}</div>
                 <article className="bubble assistant">
                   <div className="bubble-meta">{doc.name}</div>
                   <div className="text-content">載入章節中…</div>
@@ -172,7 +172,7 @@ export function ContentView(props: any) {
             )
           ) : (
             <div className="message-row">
-              <div className="avatar">TXT</div>
+              <div className="avatar">{camouflage ? 'GPT' : 'TXT'}</div>
               <article className="bubble assistant">
                 <div className="bubble-meta">{doc.name}</div>
                 {camouflage
