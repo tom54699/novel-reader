@@ -204,8 +204,10 @@ export default function App() {
       ;(async () => {
         await ensureOpenCC()
         const refined: Array<{ key: string; title: string; text: string }> = []
+        const chapters = d.chapters || []
         for (let i = start; i < end; i++) {
-          const ch = d.chapters[i]!
+          const ch = chapters[i]
+          if (!ch) continue
           const text = d.content.slice(ch.start, ch.end)
           const betterTitle = await toTraditionalOpenCC(ch.title)
           const better = await toTraditionalOpenCC(text)
@@ -215,8 +217,10 @@ export default function App() {
       })()
     } else {
       const initial: Array<{ key: string; title: string; text: string }> = []
+      const chapters = d.chapters || []
       for (let i = start; i < end; i++) {
-        const ch = d.chapters[i]!
+        const ch = chapters[i]
+        if (!ch) continue
         const text = d.content.slice(ch.start, ch.end)
         initial.push({ key: `ch-${i}`, title: ch.title, text })
       }
@@ -245,8 +249,10 @@ export default function App() {
                   setLoading(true)
                   await ensureOpenCC()
                   const refined: Array<{ key: string; title: string; text: string }> = []
+                  const chapters = d.chapters || []
                   for (let i = idx; i < end; i++) {
-                    const ch = d.chapters![i]!
+                    const ch = chapters[i]
+                    if (!ch) continue
                     const text = d.content.slice(ch.start, ch.end)
                     const betterTitle = await toTraditionalOpenCC(ch.title)
                     const better = await toTraditionalOpenCC(text)
@@ -257,8 +263,10 @@ export default function App() {
                 })()
               } else {
                 const initial: Array<{ key: string; title: string; text: string }> = []
+                const chapters = d.chapters || []
                 for (let i = idx; i < end; i++) {
-                  const ch = d.chapters![i]!
+                  const ch = chapters[i]
+                  if (!ch) continue
                   const text = d.content.slice(ch.start, ch.end)
                   initial.push({ key: `ch-${i}`, title: ch.title, text })
                 }
@@ -282,8 +290,10 @@ export default function App() {
                   setLoading(true)
                   await ensureOpenCC()
                   const refined: Array<{ key: string; title: string; text: string }> = []
+                  const chapters = d.chapters || []
                   for (let i = start; i < end; i++) {
-                    const ch = d.chapters[i]!
+                    const ch = chapters[i]
+                    if (!ch) continue
                     const text = d.content.slice(ch.start, ch.end)
                     const betterTitle = await toTraditionalOpenCC(ch.title)
                     const better = await toTraditionalOpenCC(text)
@@ -294,8 +304,10 @@ export default function App() {
                 })()
               } else {
                 const initial: Array<{ key: string; title: string; text: string }> = []
+                const chapters = d.chapters || []
                 for (let i = start; i < end; i++) {
-                  const ch = d.chapters[i]!
+                  const ch = chapters[i]
+                  if (!ch) continue
                   const text = d.content.slice(ch.start, ch.end)
                   initial.push({ key: `ch-${i}`, title: ch.title, text })
                 }
@@ -339,7 +351,9 @@ export default function App() {
             if (!d || loadedStartChapterIndex == null || !d.chapters?.length) return
             if (loadedStartChapterIndex <= 0) return
             const prevIdx = loadedStartChapterIndex - 1
-            const ch = d.chapters[prevIdx]!
+            const chapters = d.chapters || []
+            const ch = chapters[prevIdx]
+            if (!ch) return
             const text = d.content.slice(ch.start, ch.end)
             setLoadedStartChapterIndex(prevIdx)
             if (displayTraditional) {
@@ -358,7 +372,9 @@ export default function App() {
             if (!d || loadedStartChapterIndex == null || !d.chapters?.length) return
             const nextIdx = loadedStartChapterIndex + loadedMessages.length
             if (nextIdx >= d.chapters.length) return
-            const ch = d.chapters[nextIdx]!
+            const chapters = d.chapters || []
+            const ch = chapters[nextIdx]
+            if (!ch) return
             const text = d.content.slice(ch.start, ch.end)
             if (displayTraditional) {
               ;(async () => {

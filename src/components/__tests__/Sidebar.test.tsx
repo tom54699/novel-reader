@@ -13,7 +13,7 @@ describe('Sidebar', () => {
     render(<Sidebar docs={docs} activeId={'1'} onSelectDoc={() => {}} />)
     const items = screen.getAllByRole('listitem')
     expect(items.length).toBe(2)
-    expect(items[0].className).toContain('active')
+    expect(items[0]!.className).toContain('active')
   })
 
   it('truncates long names in the middle', () => {
@@ -24,8 +24,8 @@ describe('Sidebar', () => {
   it('invokes onSelectDoc when clicked', async () => {
     const onSelect = vi.fn()
     render(<Sidebar docs={docs} activeId={null} onSelectDoc={onSelect} />)
-    await userEvent.click(screen.getAllByRole('listitem')[1])
+    const li = screen.getAllByRole('listitem')[1]!
+    await userEvent.click(li)
     expect(onSelect).toHaveBeenCalledWith('2')
   })
 })
-
