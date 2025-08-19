@@ -115,28 +115,27 @@ export default function App() {
         setActiveChapterIndex(0)
         setLoadedStartChapterIndex(0)
         const end = Math.min(5, chapters.length)
-        const initial: Array<{ key: string; title: string; text: string }> = []
-        for (let i = 0; i < end; i++) {
-          const ch = chapters[i]!
-          const text = content.slice(ch.start, ch.end)
-          const titleQuick = displayTraditional ? toTraditionalQuick(ch.title) : ch.title
-          const textQuick = displayTraditional ? toTraditionalQuick(text) : text
-          initial.push({ key: `ch-${i}`, title: titleQuick, text: textQuick })
-        }
-        setLoadedMessages(initial)
         if (displayTraditional) {
-          ;(async () => {
-            await ensureOpenCC()
-            const refined: Array<{ key: string; title: string; text: string }> = []
-            for (let i = 0; i < end; i++) {
-              const ch = chapters[i]!
-              const text = content.slice(ch.start, ch.end)
-              const betterTitle = await toTraditionalOpenCC(ch.title)
-              const better = await toTraditionalOpenCC(text)
-              refined.push({ key: `ch-${i}`, title: betterTitle, text: better })
-            }
-            setLoadedMessages(refined)
-          })()
+          setLoading(true)
+          const refined: Array<{ key: string; title: string; text: string }> = []
+          await ensureOpenCC()
+          for (let i = 0; i < end; i++) {
+            const ch = chapters[i]!
+            const text = content.slice(ch.start, ch.end)
+            const betterTitle = await toTraditionalOpenCC(ch.title)
+            const better = await toTraditionalOpenCC(text)
+            refined.push({ key: `ch-${i}`, title: betterTitle, text: better })
+          }
+          setLoadedMessages(refined)
+          setLoading(false)
+        } else {
+          const initial: Array<{ key: string; title: string; text: string }> = []
+          for (let i = 0; i < end; i++) {
+            const ch = chapters[i]!
+            const text = content.slice(ch.start, ch.end)
+            initial.push({ key: `ch-${i}`, title: ch.title, text })
+          }
+          setLoadedMessages(initial)
         }
       } else {
         // No chapters found: show whole document
@@ -160,15 +159,6 @@ export default function App() {
     const start = loadedStartChapterIndex
     const end = Math.min(start + loadedMessages.length, d.chapters.length)
     if (end <= start) return
-    const initial: Array<{ key: string; title: string; text: string }> = []
-    for (let i = start; i < end; i++) {
-      const ch = d.chapters[i]!
-      const text = d.content.slice(ch.start, ch.end)
-      const titleQuick = displayTraditional ? toTraditionalQuick(ch.title) : ch.title
-      const textQuick = displayTraditional ? toTraditionalQuick(text) : text
-      initial.push({ key: `ch-${i}`, title: titleQuick, text: textQuick })
-    }
-    setLoadedMessages(initial)
     if (displayTraditional) {
       ;(async () => {
         await ensureOpenCC()
@@ -182,6 +172,14 @@ export default function App() {
         }
         setLoadedMessages(refined)
       })()
+    } else {
+      const initial: Array<{ key: string; title: string; text: string }> = []
+      for (let i = start; i < end; i++) {
+        const ch = d.chapters[i]!
+        const text = d.content.slice(ch.start, ch.end)
+        initial.push({ key: `ch-${i}`, title: ch.title, text })
+      }
+      setLoadedMessages(initial)
     }
   }, [displayTraditional])
 
@@ -205,17 +203,9 @@ export default function App() {
             if (d && d.chapters && d.chapters[idx]) {
               const start = idx
               const end = Math.min(idx + 5, d.chapters.length)
-              const initial: Array<{ key: string; title: string; text: string }> = []
-              for (let i = start; i < end; i++) {
-                const ch = d.chapters[i]!
-                const text = d.content.slice(ch.start, ch.end)
-                const titleQuick = displayTraditional ? toTraditionalQuick(ch.title) : ch.title
-                const textQuick = displayTraditional ? toTraditionalQuick(text) : text
-                initial.push({ key: `ch-${i}`, title: titleQuick, text: textQuick })
-              }
-              setLoadedMessages(initial)
               if (displayTraditional) {
                 ;(async () => {
+                  setLoading(true)
                   await ensureOpenCC()
                   const refined: Array<{ key: string; title: string; text: string }> = []
                   for (let i = start; i < end; i++) {
@@ -226,7 +216,16 @@ export default function App() {
                     refined.push({ key: `ch-${i}`, title: betterTitle, text: better })
                   }
                   setLoadedMessages(refined)
+                  setLoading(false)
                 })()
+              } else {
+                const initial: Array<{ key: string; title: string; text: string }> = []
+                for (let i = start; i < end; i++) {
+                  const ch = d.chapters[i]!
+                  const text = d.content.slice(ch.start, ch.end)
+                  initial.push({ key: `ch-${i}`, title: ch.title, text })
+                }
+                setLoadedMessages(initial)
               }
             } else {
               setLoadedMessages([])
@@ -268,17 +267,16 @@ export default function App() {
             const prevIdx = loadedStartChapterIndex - 1
             const ch = d.chapters[prevIdx]!
             const text = d.content.slice(ch.start, ch.end)
-            const titleQuick = displayTraditional ? toTraditionalQuick(ch.title) : ch.title
-            const textQuick = displayTraditional ? toTraditionalQuick(text) : text
             setLoadedStartChapterIndex(prevIdx)
-            setLoadedMessages((arr) => [{ key: `ch-${prevIdx}`, title: titleQuick, text: textQuick }, ...arr])
             if (displayTraditional) {
               ;(async () => {
                 await ensureOpenCC()
                 const betterTitle = await toTraditionalOpenCC(ch.title)
                 const better = await toTraditionalOpenCC(text)
-                setLoadedMessages((arr) => arr.map((m) => (m.key === `ch-${prevIdx}` ? { ...m, title: betterTitle, text: better } : m)))
+                setLoadedMessages((arr) => [{ key: `ch-${prevIdx}`, title: betterTitle, text: better }, ...arr])
               })()
+            } else {
+              setLoadedMessages((arr) => [{ key: `ch-${prevIdx}`, title: ch.title, text }, ...arr])
             }
           }}
           onEndReached={() => {
@@ -288,16 +286,15 @@ export default function App() {
             if (nextIdx >= d.chapters.length) return
             const ch = d.chapters[nextIdx]!
             const text = d.content.slice(ch.start, ch.end)
-            const titleQuick = displayTraditional ? toTraditionalQuick(ch.title) : ch.title
-            const textQuick = displayTraditional ? toTraditionalQuick(text) : text
-            setLoadedMessages((arr) => [...arr, { key: `ch-${nextIdx}`, title: titleQuick, text: textQuick }])
             if (displayTraditional) {
               ;(async () => {
                 await ensureOpenCC()
                 const betterTitle = await toTraditionalOpenCC(ch.title)
                 const better = await toTraditionalOpenCC(text)
-                setLoadedMessages((arr) => arr.map((m) => (m.key === `ch-${nextIdx}` ? { ...m, title: betterTitle, text: better } : m)))
+                setLoadedMessages((arr) => [...arr, { key: `ch-${nextIdx}`, title: betterTitle, text: better }])
               })()
+            } else {
+              setLoadedMessages((arr) => [...arr, { key: `ch-${nextIdx}`, title: ch.title, text }])
             }
           }}
           hasPrev={(function() {

@@ -7,7 +7,7 @@ const mapPairs: Array<[string, string]> = [
   ['么','麼'],['义','義'],['乌','烏'],['乐','樂'],['乔','喬'],['习','習'],['书','書'],['买','買'],['乱','亂'],['争','爭'],['亏','虧'],
   ['亚','亞'],['产','產'],['会','會'],['众','眾'],['优','優'],['传','傳'],['伤','傷'],['体','體'],['余','餘'],['价','價'],['伦','倫'],
   ['们','們'],['儿','兒'],['党','黨'],['军','軍'],['农','農'],['净','淨'],['医','醫'],['华','華'],['协','協'],['单','單'],['卖','賣'],
-  ['变','變'],['发','發'],['发','髮'],['台','臺'],['后','後'],['启','啟'],['吗','嗎'],['团','團'],['国','國'],['图','圖'],['圆','圓'],
+  ['变','變'],['发','發'],['台','臺'],['后','後'],['启','啟'],['吗','嗎'],['团','團'],['国','國'],['图','圖'],['圆','圓'],
   ['处','處'],['备','備'],['复','復'],['实','實'],['对','對'],['将','將'],['师','師'],['广','廣'],['庆','慶'],['应','應'],['库','庫'],
   ['录','錄'],['当','當'],['彻','徹'],['恒','恆'],['恶','惡'],['惯','慣'],['戏','戲'],['护','護'],['据','據'],['时','時'],['术','術'],
   ['条','條'],['极','極'],['权','權'],['构','構'],['枪','槍'],['欢','歡'],['气','氣'],['汉','漢'],['汇','匯'],['没','沒'],['历','歷'],
@@ -35,11 +35,16 @@ export async function ensureOpenCC(): Promise<void> {
       try {
         const mod: any = await import('opencc-js')
         // Try common APIs across versions
-        if (mod && typeof mod.default?.init === 'function') {
-          // Newer API pattern
+        // 1) ESM default export with Converter factory (no init required)
+        if (mod?.default && typeof mod.default.Converter === 'function') {
+          const conv = mod.default.Converter({ from: 'cn', to: 'tw' })
+          return { convert: (s: string) => conv(s) }
+        }
+        // 2) Some builds expose default.init() then new Converter()
+        if (mod && typeof mod.default?.init === 'function' && typeof mod.default?.Converter === 'function') {
           await mod.default.init()
-          // s2tw config
-          return new mod.default.Converter({ from: 'cn', to: 'tw' })
+          const conv = new mod.default.Converter({ from: 'cn', to: 'tw' })
+          return conv
         }
         if (mod && typeof mod.OpenCC === 'function') {
           const inst = new mod.OpenCC('s2tw.json')
@@ -68,13 +73,14 @@ export function hasOpenCC(): boolean {
 export async function toTraditionalOpenCC(input: string): Promise<string> {
   if (!openccConverter) return toTraditionalQuick(input)
   try {
-    if (typeof openccConverter.convertPromise === 'function') {
-      return await openccConverter.convertPromise(input)
-    }
-    if (typeof openccConverter.convert === 'function') {
+    // Wrapper object with sync convert(s: string)
+    if (typeof openccConverter.convert === 'function' && openccConverter.convert.length >= 1) {
       const res = openccConverter.convert(input)
       if (res && typeof res.then === 'function') return await res
       return res
+    }
+    if (typeof openccConverter.convertPromise === 'function') {
+      return await openccConverter.convertPromise(input)
     }
   } catch (_) {
     // ignore
