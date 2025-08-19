@@ -23,8 +23,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup PNPM
-        uses: pnpm/action-setup@v4
+      # Use corepack to respect packageManager field (pnpm@x)
+      - name: Enable corepack
+        run: corepack enable
 
       - name: Setup Node
         uses: actions/setup-node@v4
