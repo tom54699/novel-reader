@@ -1,7 +1,7 @@
 import { useState } from 'react'
 
 export function BottomBar(props: any) {
-  const { searchState = { query: '', hits: [], currentIndex: 0 }, onSearch = () => {}, onNavigateSearch = () => {}, onAddFile = () => {}, inputRef, onToggleTraditional = () => {}, traditional = false, onAdjustFont = (_d: number) => {}, onAdjustLine = (_d: number) => {}, onAdjustWidth = (_d: number) => {}, history = [], onOpenHistory = (_item: any) => {} } = props
+  const { searchState = { query: '', hits: [], currentIndex: 0 }, onSearch = () => {}, onNavigateSearch = () => {}, onAddFile = () => {}, onAddFolder = () => {}, inputRef, onToggleTraditional = () => {}, traditional = false, onAdjustFont = (_d: number) => {}, onAdjustLine = (_d: number) => {}, onAdjustWidth = (_d: number) => {}, history = [], onOpenHistory = (_item: any) => {} } = props
   const [menuOpen, setMenuOpen] = useState(false)
   const [submenu, setSubmenu] = useState<null | 'settings' | 'history'>(null)
   return (
@@ -24,6 +24,16 @@ export function BottomBar(props: any) {
                     }}
                   >
                     上傳 .txt 檔案
+                  </button>
+                  <button
+                    type="button"
+                    className="menu-item"
+                    onClick={() => {
+                      setMenuOpen(false)
+                      onAddFolder()
+                    }}
+                  >
+                    選擇資料夾匯入
                   </button>
                   <button
                     type="button"

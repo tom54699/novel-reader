@@ -13,6 +13,7 @@ import { loadHistory, saveHistory, upsertHistory } from './utils/history'
 
 export default function App() {
   const fileInputRef = useRef<HTMLInputElement | null>(null)
+  const folderInputRef = useRef<HTMLInputElement | null>(null)
   const [activeId, setActiveId] = useState<AppState['activeId']>(null)
   const [docs, setDocs] = useState<AppState['docs']>([])
   const [searchState, setSearchState] = useState<SearchState>({ query: '', hits: [], currentIndex: 0 })
@@ -232,9 +233,42 @@ export default function App() {
           activeChapterIndex={activeChapterIndex}
           onSelectDoc={(id: string) => {
             setActiveId(id)
-            setActiveChapterIndex(null)
-            setLoadedStartChapterIndex(null)
-            setLoadedMessages([])
+            const d = docs.find((x) => x.id === id)
+            if (d && d.chapters && d.chapters.length) {
+              // Auto enter chapter mode with first 5 chapters
+              const idx = 0
+              setActiveChapterIndex(idx)
+              setLoadedStartChapterIndex(idx)
+              const end = Math.min(idx + 5, d.chapters.length)
+              if (displayTraditional) {
+                ;(async () => {
+                  setLoading(true)
+                  await ensureOpenCC()
+                  const refined: Array<{ key: string; title: string; text: string }> = []
+                  for (let i = idx; i < end; i++) {
+                    const ch = d.chapters![i]!
+                    const text = d.content.slice(ch.start, ch.end)
+                    const betterTitle = await toTraditionalOpenCC(ch.title)
+                    const better = await toTraditionalOpenCC(text)
+                    refined.push({ key: `ch-${i}`, title: betterTitle, text: better })
+                  }
+                  setLoadedMessages(refined)
+                  setLoading(false)
+                })()
+              } else {
+                const initial: Array<{ key: string; title: string; text: string }> = []
+                for (let i = idx; i < end; i++) {
+                  const ch = d.chapters![i]!
+                  const text = d.content.slice(ch.start, ch.end)
+                  initial.push({ key: `ch-${i}`, title: ch.title, text })
+                }
+                setLoadedMessages(initial)
+              }
+            } else {
+              setActiveChapterIndex(null)
+              setLoadedStartChapterIndex(null)
+              setLoadedMessages([])
+            }
           }}
           onSelectChapter={(idx: number) => {
             setActiveChapterIndex(idx)
@@ -371,6 +405,7 @@ export default function App() {
           onAdjustFont={(d: number) => setReaderFont((v) => Math.max(12, Math.min(32, v + d)))}
           onAdjustLine={(d: number) => setReaderLine((v) => Math.max(1.2, Math.min(2.4, Math.round((v + d) * 10) / 10)))}
           onAdjustWidth={(d: number) => setReaderWidth((v) => Math.max(640, Math.min(1200, v + d)))}
+          onAddFolder={() => folderInputRef.current?.click()}
           history={historyList.slice(0, 12)}
           onOpenHistory={(h: any) => {
             setActiveId(h.docId)
@@ -421,6 +456,37 @@ export default function App() {
         type="file"
         accept=".txt"
         onChange={onFileSelected}
+        style={{ display: 'none' }}
+      />
+      <input
+        ref={folderInputRef}
+        type="file"
+        // @ts-ignore
+        webkitdirectory=""
+        multiple
+        onChange={async (e) => {
+          const files = Array.from(e.target.files || [])
+          e.target.value = ''
+          const txts = files.filter((f) => f.name.toLowerCase().endsWith('.txt')) as File[]
+          if (!txts.length) return
+          setLoading(true)
+          try {
+            for (const file of txts) {
+              const content = await readFileAsText(file)
+              const chapters = parseChapters(content)
+              const newDoc: Doc = { id: generateId(), name: file.name, size: file.size, content, chapters }
+              setDocs((prev) => [newDoc, ...prev])
+            }
+            // Auto open the first imported file
+            setTimeout(() => {
+              setActiveId((cur) => cur ?? (docs[0]?.id || null))
+            }, 0)
+          } catch (err: any) {
+            setError(err?.message || '匯入資料夾失敗')
+          } finally {
+            setLoading(false)
+          }
+        }}
         style={{ display: 'none' }}
       />
       {error && <div className="error-banner" role="alert">{error}</div>}

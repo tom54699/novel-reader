@@ -37,10 +37,10 @@ body {
 .sidebar-inner { height: 100%; display: flex; flex-direction: column; }
 .sidebar-header { padding: 12px; font-weight: 600; color: #cbd5e1; }
 .file-list { list-style: none; margin: 0; padding: 0; overflow-y: auto; }
-.file-item { padding: 10px 12px; cursor: pointer; border-radius: 6px; margin: 2px 6px; color: #e5e7eb; width: 100%; text-align: left; background: transparent; border: none; }
+.file-item { padding: 10px 12px; cursor: pointer; border-radius: 6px; margin: 2px 6px; color: #e5e7eb; width: 100%; text-align: left; background: transparent; border: none; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .file-item:hover { background: var(--hover); }
 .file-item.active { background: var(--active); }
-.file-name { display: inline-block; max-width: calc(var(--sidebar-width) - 32px); overflow: hidden; text-overflow: ellipsis; color: #e5e7eb; }
+.file-name { display: inline-block; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #e5e7eb; }
 
 .content-inner { flex: 1; overflow-y: auto; display: flex; justify-content: center; scroll-behavior: smooth; }
 .bubble-stack { width: 100%; max-width: var(--content-max); padding: 24px; }
