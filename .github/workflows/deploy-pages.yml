@@ -48,22 +48,33 @@ jobs:
         if: steps.pm.outputs.pm == ''
         run: npm ci
 
+      - name: Compute BASE_URL
+        id: baseurl
+        run: |
+          REPO_NAME="${{ github.event.repository.name }}"
+          OWNER="${{ github.repository_owner }}"
+          if [[ "$REPO_NAME" == "$OWNER.github.io" ]]; then
+            echo "base=/" >> $GITHUB_OUTPUT
+          else
+            echo "base=/$REPO_NAME/" >> $GITHUB_OUTPUT
+          fi
+
       - name: Build (pnpm)
         if: steps.pm.outputs.pm == 'pnpm'
         env:
-          BASE_URL: /${{ github.event.repository.name }}/
+          BASE_URL: ${{ steps.baseurl.outputs.base }}
         run: pnpm build
 
       - name: Build (yarn)
         if: steps.pm.outputs.pm == 'yarn'
         env:
-          BASE_URL: /${{ github.event.repository.name }}/
+          BASE_URL: ${{ steps.baseurl.outputs.base }}
         run: yarn build
 
       - name: Build (npm)
         if: steps.pm.outputs.pm == ''
         env:
-          BASE_URL: /${{ github.event.repository.name }}/
+          BASE_URL: ${{ steps.baseurl.outputs.base }}
         run: npm run build --if-present
 
       - name: SPA fallback (404.html)
